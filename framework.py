@@ -24,7 +24,7 @@ class SimulationObject:
     def update(self) -> None:
         pass
 
-    def display(self) -> str:
+    def display_str(self) -> str:
         return self.global_id
 
     @classmethod
@@ -78,7 +78,7 @@ class Order(SimulationObject):
     def is_ask(self) -> bool:
         return self.dir == Order.SELL_DIR
 
-    def display(self) -> str:
+    def display_str(self) -> str:
         frames_to_expire = (
             "" if self.frames_to_expire is None else self.frames_to_expire
         )
@@ -91,7 +91,7 @@ class Order(SimulationObject):
         )
 
     @staticmethod
-    def display_header(dir: int) -> str:
+    def display_header_str(dir: int) -> str:
         price_label = "Bid" if dir == Order.BUY_DIR else "Ask"
         return (
             f"{'ID'        :<{Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN}}"
@@ -251,11 +251,11 @@ class OrderBook(SimulationObject):
         self._orders_to_place = []
         self._orders_to_cancel = []
 
-    def display(self, k: int = 5) -> None:
+    def display_str(self, k: int = 5) -> None:
         if k == -1:
             k = max(len(self.bids), len(self.asks))
 
-        s = Order.display_header(Order.SELL_DIR)
+        s = Order.display_header_str(Order.SELL_DIR)
         s += (
             "-" * (4 * (Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN))
             + "\n"
@@ -273,7 +273,7 @@ class OrderBook(SimulationObject):
             "-" * (4 * (Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN))
             + "\n"
         )
-        s += Order.display_header(Order.BUY_DIR)
+        s += Order.display_header_str(Order.BUY_DIR)
 
         return s
 
