@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Union, Tuple
+from typing import Any, Callable, List, Union, Tuple, Dict
 import pygame
 
 
@@ -16,22 +16,31 @@ class Command:
         self,
         f: Callable,
         name: Union[str, None] = None,
-        args_definitions: List[Argument] = [],
+        args_definitions: List[Union[Argument, Any]] = [],
         short_name: Union[str, None] = None,
+        f_kwargs: Dict[str, Any] = {},
     ) -> None:
         self.name = name.lower() if name is not None else f.__name__.lower()
         self.short_name = short_name.lower() if short_name is not None else None
         self.f = f
         self.args_definitions = args_definitions
+        self.f_kwargs = f_kwargs
 
     def run(self, str_args: List[str]) -> None:
         args = []
-        for i, arg_definition in enumerate(self.args_definitions):
-            str_arg = None
-            if i < len(str_args):
-                str_arg = str_args[i]
-            args.append(arg_definition.get(str_arg))
-        return self.f(*args)
+        i = 0
+        for arg_definition in self.args_definitions:
+            if isinstance(arg_definition, Argument):
+                str_arg = None
+                if i < len(str_args):
+                    str_arg = str_args[i]
+                    if len(str_arg) == 0:
+                        str_arg = None
+                args.append(arg_definition.get(str_arg))
+                i += 1
+            else:
+                args.append(arg_definition)
+        return self.f(*args, **self.f_kwargs)
 
 
 class CommandDisplay:
@@ -56,7 +65,8 @@ class CommandDisplay:
         command_box_color: Tuple[int, int, int] = (30, 30, 30),
         output_color: Tuple[int, int, int] = (255, 255, 255),
         output_box_color: Tuple[int, int, int] = (50, 50, 50),
-        draw_fn: Union[Callable, None] = None,
+        draw_fn: Union[Callable[[int, int, int, int], None], None] = None,
+        handle_event_fn: Union[Callable[[pygame.event.Event], None], None] = None,
     ) -> None:
         super().__init__()
         self.commands = {}
@@ -94,6 +104,7 @@ class CommandDisplay:
         self.output_box_color = output_box_color
 
         self.draw_fn = draw_fn
+        self.handle_event_fn = handle_event_fn
 
     def quit(self) -> None:
         self.running = False
@@ -215,6 +226,9 @@ class CommandDisplay:
                     else:
                         self.command_buffer += event.unicode
 
+                    if self.handle_event_fn is not None:
+                        self.handle_event_fn(event)
+
             self.screen.fill(self.background_color)
 
             blink = (counter * self.blinks_per_second // self.fps) % 2 == 0
@@ -229,6 +243,15 @@ class CommandDisplay:
             rect = block.get_rect()
             rect.left = self.margin
             rect.bottom = self.h - self.margin
+
+            if self.draw_fn is not None:
+                self.draw_fn(
+                    x=self.margin,
+                    y=self.margin,
+                    w=self.w - self.output_box_width - 2 * self.margin,
+                    h=self.h - rect.height - 3 * self.margin,
+                )
+
             pygame.draw.rect(
                 self.screen,
                 self.command_box_color,
@@ -259,15 +282,6 @@ class CommandDisplay:
                 h=self.h - rect.height - 2 * self.margin,
                 color=self.output_color,
             )
-
-            if self.draw_fn is not None:
-                self.draw_fn(
-                    screen=self.screen,
-                    x=self.margin,
-                    y=self.margin,
-                    w=self.w - self.output_box_width - 2 * self.margin,
-                    h=self.h - rect.height - 3 * self.margin,
-                )
 
             pygame.display.flip()
 

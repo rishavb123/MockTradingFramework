@@ -4,6 +4,8 @@ from typing import Union, Self, List
 import time
 import threading
 
+from command_display import CommandDisplay, Command
+
 
 class Time:
     now = 0
@@ -22,10 +24,23 @@ class SimulationObject:
         self.id = self.__class__.generate_id()
         self.global_id = self.__class__.to_global_id(self.id)
         self.__z_index = z_index
+        self.simulation = None
+        self.dependents = []
+
         SimulationObject.__objects[self.global_id] = self
 
     def update(self) -> None:
         pass
+
+    def set_simulation(self, simulation: Simulation) -> None:
+        self.simulation = simulation
+        for dependent in self.dependents:
+            self.simulation.add_object(dependent)
+
+    def add_dependent(self, dependent: SimulationObject) -> None:
+        self.dependents.append(dependent)
+        if self.simulation is not None:
+            self.simulation.add_object(dependent)
 
     def display_str(self) -> str:
         return self.global_id
@@ -73,6 +88,7 @@ class Simulation(threading.Thread):
 
         self.dt = dt
         self.paused = False
+        self.killed = False
         self.iter = iter
 
         self.lock = threading.Lock() if lock is None else lock
@@ -90,6 +106,7 @@ class Simulation(threading.Thread):
                     break
             if not inserted:
                 self.__z_ordering.append(object.z_index)
+        object.set_simulation(self)
         self.__objects[object.z_index].append(object)
 
     def update(self) -> None:
@@ -107,6 +124,9 @@ class Simulation(threading.Thread):
     def pause(self) -> None:
         with self.lock:
             self.paused = True
+
+    def kill(self) -> None:
+        self.killed = True
 
     def unpause(self) -> None:
         with self.lock:
@@ -128,5 +148,18 @@ class Simulation(threading.Thread):
                     should_update = True
                 if self.should_update:
                     should_update = True
+                if self.killed:
+                    break
             if should_update:
                 self.update()
+
+    def connect_display(self, c: CommandDisplay):
+        def quit():
+            c.running = False
+            self.kill()
+        c.add_commands(
+            Command(f=self.toggle_pause, short_name="p"),
+            Command(f=self.manual_update, short_name="m"),
+            Command(f=self.kill, short_name="k"),
+            Command(f=quit, short_name="q"),
+        )

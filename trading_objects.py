@@ -1,17 +1,21 @@
 from __future__ import annotations
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Tuple
+from collections import namedtuple
 
+from util import prefix_lines
 from simulation import Time, SimulationObject
 
 
 class Order(SimulationObject):
-    DISPLAY_COLUMN_WIDTH = 7
-    DISPLAY_COLUMN_MARGIN = 3
+    DISPLAY_COLUMN_WIDTH = 10
+    DISPLAY_COLUMN_MARGIN = 5
 
     BUY_DIR = 1
     SELL_DIR = -1
 
     margin = DISPLAY_COLUMN_MARGIN * " "
+
+    PublicInfo = namedtuple("OrderInfo", ["id", "price", "size"])
 
     def __init__(
         self,
@@ -61,6 +65,9 @@ class Order(SimulationObject):
     def cancel(self) -> None:
         self.__cancelled = True
 
+    def public_info(self) -> Order.PublicInfo:
+        return Order.PublicInfo(self.id, self.__price, self.size)
+
     @property
     def symbol(self):
         return self.__symbol
@@ -89,15 +96,17 @@ class Order(SimulationObject):
     def frames_to_expire(self):
         return self.__frames_to_expire
 
-    def display_str(self) -> str:
+    def display_str(self, viewer: Union[Agent, None] = None) -> str:
         frames_to_expire = (
             "" if self.__frames_to_expire is None else self.__frames_to_expire
         )
+        sender = "You" if self.sender == viewer else "Anon"
 
         return (
             f"{self.id          :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
-            f"{self.__price       :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
-            f"{self.__size        :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
+            f"{self.__price     :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
+            f"{self.__size      :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
+            f"{sender           :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
             f"{frames_to_expire :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}\n"
         )
 
@@ -108,11 +117,14 @@ class Order(SimulationObject):
             f"{'ID'        :<{Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN}}"
             f"{price_label :<{Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN}}"
             f"{'Size'      :<{Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN}}"
+            f"{'Sender'    :<{Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN}}"
             f"{'Expiring'  :<{Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN}}\n"
         )
 
 
 class OrderBook(SimulationObject):
+    PublicInfo = namedtuple("OrderBookInfo", ["bids", "asks"])
+
     def __init__(self, symbol: str, exchange: Exchange) -> None:
         super().__init__()
 
@@ -192,7 +204,7 @@ class OrderBook(SimulationObject):
             else:
                 trade_price = matched_ask.price
             trade_size = min(matched_bid.size, matched_ask.size)
-            if self.exchange is not None:
+            if self.exchange is not None and matched_bid.sender != matched_ask.sender:
                 self.exchange.execute_trade(
                     self.symbol,
                     trade_price,
@@ -225,28 +237,37 @@ class OrderBook(SimulationObject):
         self._orders_to_place = []
         self._orders_to_cancel = []
 
-    def display_str(self, k: int = 5) -> None:
+    def public_info(
+        self,
+    ) -> Tuple[List[Order.PublicInfo], List[Order.PublicInfo]]:
+        return OrderBook.PublicInfo(
+            bids=[order.public_info() for order in self.bids],
+            asks=[order.public_info() for order in self.asks],
+        )
+
+    def display_str(self, viewer: Union[Agent, None] = None, k: int = 5) -> None:
         if k == -1:
             k = max(len(self.bids), len(self.asks))
 
         s = Order.display_header_str(Order.SELL_DIR)
-        s += (
-            "-" * (4 * (Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN))
-            + "\n"
-        )
+        width = len(s) - 1
+        s += "-" * width + "\n"
+
+        if len(self.asks) < k:
+            s += "\n" * (k - len(self.asks))
 
         for order in self.asks[-k:]:
-            s += order.display()
+            s += order.display_str(viewer=viewer)
 
         s += "\n\n"
 
         for order in self.bids[-1 : -k - 1 : -1]:
-            s += order.display()
+            s += order.display_str(viewer=viewer)
 
-        s += (
-            "-" * (4 * (Order.DISPLAY_COLUMN_WIDTH + Order.DISPLAY_COLUMN_MARGIN))
-            + "\n"
-        )
+        if len(self.bids) < k:
+            s += "\n" * (k - len(self.bids))
+
+        s += "-" * width + "\n"
         s += Order.display_header_str(Order.BUY_DIR)
 
         return s
@@ -261,9 +282,6 @@ class Agent(SimulationObject):
     def register_exchange(self, exchange: Exchange) -> None:
         self.exchanges[exchange.name] = exchange
 
-    def cancel_order(self, order: Order) -> None:
-        order.cancel()
-
     def limit_order(
         self,
         dir: int,
@@ -272,7 +290,7 @@ class Agent(SimulationObject):
         symbol: Union[str, None] = None,
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
-    ):
+    ) -> int:
         if (exchange_name is not None and exchange_name not in self.exchanges) or len(
             self.exchanges.values()
         ) == 0:
@@ -285,7 +303,8 @@ class Agent(SimulationObject):
         if symbol is None and len(exchange.symbols) == 0:
             raise Exception("Symbol does not exist")
         symbol = exchange.symbols[0] if symbol is None else symbol
-        price = round(round(price / exchange.tick_size) * exchange.tick_size, 2)
+        if price != float("inf"):
+            price = round(round(price / exchange.tick_size) * exchange.tick_size, 2)
         order = Order(
             sender=self,
             symbol=symbol,
@@ -295,7 +314,7 @@ class Agent(SimulationObject):
             exchange=exchange,
             frames_to_expire=frames_to_expire,
         )
-        self.open_orders(order)
+        self.open_orders.append(order)
         return order.place()
 
     def market_order(
@@ -305,8 +324,8 @@ class Agent(SimulationObject):
         symbol: Union[str, None] = None,
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
-    ):
-        self.limit_order(
+    ) -> int:
+        return self.limit_order(
             symbol=symbol,
             dir=dir,
             price=(0 if dir == Order.SELL_DIR else float("inf")),
@@ -349,7 +368,7 @@ class Agent(SimulationObject):
             frames_to_expire=frames_to_expire,
         )
 
-    def buy(
+    def take(
         self,
         size: int,
         exchange_name: Union[str, None] = None,
@@ -378,6 +397,12 @@ class Agent(SimulationObject):
             exchange_name=exchange_name,
             frames_to_expire=frames_to_expire,
         )
+
+    def cancel(self, order_id: int) -> None:
+        order = Order.get_instance(order_id)
+        if order.sender == self:
+            order.cancel()
+            return order_id
 
     def update(self) -> None:
         self.open_orders = [order for order in self.open_orders if not order.voided()]
@@ -447,7 +472,7 @@ class Product(SimulationObject):
 class Exchange(SimulationObject):
     def __init__(
         self,
-        products: List[Product] = [],
+        products: Union[List[Product], Product] = [],
         agents: List[Agent] = [],
         tick_size: float = 0.01,
         order_fee: float = 0,
@@ -462,6 +487,8 @@ class Exchange(SimulationObject):
         self.__order_books = {}
         self.__accounts = {}
 
+        if isinstance(products, Product):
+            products = [products]
         [self.register_product(product) for product in products]
         [self.register_agent(agent) for agent in agents]
 
@@ -478,12 +505,12 @@ class Exchange(SimulationObject):
         self.__accounts[order.sender.global_id].update_holding(
             Account.CASH_SYM, -self.order_fee
         )
-        self.__order_books[order.__symbol].place_order(order)
+        self.__order_books[order.symbol].place_order(order)
 
     def execute_trade(
         self, symbol: str, price: float, size: int, buyer: Agent, seller: Agent
     ) -> None:
-        self.__products[symbol].record_trade(price, size)
+        self.__products[symbol].record_trade(price, size, buyer, seller)
         self.__accounts[buyer.global_id].update_holding(Account.CASH_SYM, -price * size)
         self.__accounts[buyer.global_id].update_holding(symbol, size)
         self.__accounts[seller.global_id].update_holding(Account.CASH_SYM, price * size)
@@ -493,6 +520,7 @@ class Exchange(SimulationObject):
         if product.symbol not in self.__order_books:
             self.__order_books[product.symbol] = OrderBook(product.symbol, self)
             self.__products[product.symbol] = product
+            self.add_dependent(self.__order_books[product.symbol])
             return True
         return False
 
@@ -500,8 +528,23 @@ class Exchange(SimulationObject):
         if agent.global_id not in self.__accounts:
             self.__accounts[agent.global_id] = Account(agent)
             self.__agents[agent.global_id] = agent
+            agent.register_exchange(self)
             return True
         return False
+
+    def public_info(self) -> Dict[str, OrderBook.PublicInfo]:
+        return {
+            symbol: self.__order_books[symbol].public_info() for symbol in self.symbols
+        }
+
+    def display_str(self, viewer: Union[Agent, None] = None, k: int = 5) -> str:
+        s = f"Exchange: {self.name}\n"
+        for symbol in self.symbols:
+            s += f"\tSymbol: {symbol}\n"
+            s += prefix_lines(
+                self.__order_books[symbol].display_str(viewer=viewer, k=k), "\t\t"
+            )
+        return s + "\n\n"
 
     @property
     def order_fee(self) -> float:
