@@ -50,7 +50,7 @@ class SimulationObject:
     @staticmethod
     def get_object(global_id: str) -> SimulationObject:
         return SimulationObject.__objects.get(global_id, None)
-    
+
     @classmethod
     def get_instance(cls, id: int) -> Self:
         return SimulationObject.get_object(cls.to_global_id(id))
@@ -110,15 +110,21 @@ class Simulation(threading.Thread):
         with self.lock:
             self.paused = False
 
+    def toggle_pause(self) -> None:
+        self.paused = not self.paused
+
     def run(self) -> None:
         while Time.now < self.iter:
             cur_time = time.time()
+            time_update = False
             if self.dt is not None and cur_time - self.last_update >= self.dt:
-                self.should_update = True
+                time_update = True
                 self.last_update = cur_time
             should_update = False
             with self.lock:
-                if self.should_update and not self.paused:
+                if time_update and not self.paused:
+                    should_update = True
+                if self.should_update:
                     should_update = True
             if should_update:
                 self.update()
