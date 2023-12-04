@@ -1,9 +1,6 @@
 from __future__ import annotations
 from typing import Union
-try:
-    from typing import Self
-except ImportError:
-    from typing_extensions import Self
+from typing import Self
 
 import time
 import threading
@@ -36,7 +33,6 @@ class SimulationObject:
 
     def __del__(self) -> None:
         del SimulationObject.__objects[self.global_id]
-        return super().__del__(self)
 
     @property
     def z_index(self):
