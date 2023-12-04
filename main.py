@@ -19,22 +19,27 @@ def main():
     s.start()
 
     c = CommandDisplay(
-        [Command(
-                f=lambda:"hello world",
+        [
+            Command(
+                f=lambda: "hello world",
                 name="hello_world",
                 args_definitions=[],
                 short_name="h",
             ),
             Command(
-                f=lambda:"yoo world my name is Rishav Bhagat isn't that cool",
+                f=lambda: "yoo world my name is Rishav Bhagat isn't that cool",
                 name="hello_rishav",
                 args_definitions=[],
                 short_name="r",
-            )
+            ),
+            Command(f=lambda: s.pause(), name="pause", short_name="p"),
+            Command(f=lambda: s.unpause(), name="unpause", short_name="u"),
+            Command(f=lambda: s.manual_update(), name="manual_update", short_name="m"),
         ]
     )
 
     c.run()
+
 
 if __name__ == "__main__":
     main()
