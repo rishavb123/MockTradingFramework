@@ -127,8 +127,14 @@ class CommandDisplay:
         pass
 
     def wrap_text(
-        self, text_lst, x: int, y: int, w: int, h: int, color: Tuple[int, int, int]
-    ) -> None:
+        self,
+        text_lst: List[str],
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        color: Tuple[int, int, int],
+    ) -> List[str]:
         cur_y = y
         new_text_lst = []
         font_height = None
