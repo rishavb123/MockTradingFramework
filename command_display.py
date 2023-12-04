@@ -56,6 +56,7 @@ class CommandDisplay:
         command_box_color: Tuple[int, int, int] = (30, 30, 30),
         output_color: Tuple[int, int, int] = (255, 255, 255),
         output_box_color: Tuple[int, int, int] = (50, 50, 50),
+        draw_fn: Union[Callable, None] = None,
     ) -> None:
         super().__init__()
         self.commands = {}
@@ -92,6 +93,8 @@ class CommandDisplay:
         self.output_color = output_color
         self.output_box_color = output_box_color
 
+        self.draw_fn = draw_fn
+
     def quit(self) -> None:
         self.running = False
 
@@ -117,14 +120,6 @@ class CommandDisplay:
                 self.log_buffer.insert(0, str(result))
         else:
             self.log_buffer.insert(0, f"Command {command_name} not found")
-
-    def draw(self, x: int, y: int, w: int, h: int) -> None:
-        # pygame.draw.rect(
-        #     self.screen,
-        #     (255, 255, 255),
-        #     (x, y, w, h),
-        # )
-        pass
 
     def wrap_text(
         self,
@@ -265,12 +260,14 @@ class CommandDisplay:
                 color=self.output_color,
             )
 
-            self.draw(
-                x=self.margin,
-                y=self.margin,
-                w=self.w - self.output_box_width - 2 * self.margin,
-                h=self.h - rect.height - 3 * self.margin,
-            )
+            if self.draw_fn is not None:
+                self.draw_fn(
+                    screen=self.screen,
+                    x=self.margin,
+                    y=self.margin,
+                    w=self.w - self.output_box_width - 2 * self.margin,
+                    h=self.h - rect.height - 3 * self.margin,
+                )
 
             pygame.display.flip()
 
