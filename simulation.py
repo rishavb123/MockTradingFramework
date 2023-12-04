@@ -20,7 +20,7 @@ class SimulationObject:
     def __init__(self, z_index: int = 0) -> None:
         self.created_at = Time.now
         self.id = self.__class__.generate_id()
-        self.global_id = f"{self.__class__.__name__.lower()}{self.id}"
+        self.global_id = self.__class__.to_global_id(self.id)
         self.__z_index = z_index
         SimulationObject.__objects[self.global_id] = self
 
@@ -30,6 +30,10 @@ class SimulationObject:
     def display_str(self) -> str:
         return self.global_id
 
+    def __del__(self) -> None:
+        del SimulationObject.__objects[self.global_id]
+        return super().__del__(self)
+
     @property
     def z_index(self):
         return self.__z_index
@@ -38,6 +42,10 @@ class SimulationObject:
     def generate_id(cls) -> int:
         cls.last_id += 1
         return cls.last_id
+
+    @classmethod
+    def to_global_id(cls, id: int) -> str:
+        return f"{cls.__name__.lower()}{id}"
 
     @staticmethod
     def get_object(global_id: str) -> SimulationObject:
