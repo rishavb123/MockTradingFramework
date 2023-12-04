@@ -74,9 +74,12 @@ class Simulation(threading.Thread):
     def run(self) -> None:
         while Time.now < self.iter:
             cur_time = time.time()
-            if self.dt is not None and cur_time - self.last_update > self.dt:
+            if self.dt is not None and cur_time - self.last_update >= self.dt:
                 self.should_update = True
                 self.last_update = cur_time
+            should_update = False
             with self.lock:
                 if self.should_update:
-                    self.update()
+                    should_update = True
+            if should_update:
+                self.update()
