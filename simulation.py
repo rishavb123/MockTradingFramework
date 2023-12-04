@@ -60,6 +60,7 @@ class Simulation(threading.Thread):
         self.should_update = True
 
         self.dt = dt
+        self.paused = False
         self.iter = iter
 
         self.lock = threading.Lock() if lock is None else lock
@@ -89,6 +90,14 @@ class Simulation(threading.Thread):
         with self.lock:
             self.should_update = True
 
+    def pause(self) -> None:
+        with self.lock:
+            self.paused = True
+
+    def unpause(self) -> None:
+        with self.lock:
+            self.paused = False
+
     def run(self) -> None:
         while Time.now < self.iter:
             cur_time = time.time()
@@ -97,7 +106,7 @@ class Simulation(threading.Thread):
                 self.last_update = cur_time
             should_update = False
             with self.lock:
-                if self.should_update:
+                if self.should_update and not self.paused:
                     should_update = True
             if should_update:
                 self.update()
