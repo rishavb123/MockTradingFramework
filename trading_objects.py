@@ -285,6 +285,7 @@ class Agent(SimulationObject):
         if symbol is None and len(exchange.symbols) == 0:
             raise Exception("Symbol does not exist")
         symbol = exchange.symbols[0] if symbol is None else symbol
+        price = round(round(price / exchange.tick_size) * exchange.tick_size, 2)
         order = Order(
             sender=self,
             symbol=symbol,
@@ -299,9 +300,9 @@ class Agent(SimulationObject):
 
     def market_order(
         self,
-        symbol: str,
         dir: int,
         size: int,
+        symbol: Union[str, None] = None,
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ):
@@ -316,9 +317,9 @@ class Agent(SimulationObject):
 
     def bid(
         self,
-        symbol: str,
         price: float,
         size: int,
+        symbol: Union[str, None] = None,
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ) -> int:
@@ -333,9 +334,9 @@ class Agent(SimulationObject):
 
     def ask(
         self,
-        symbol: str,
         price: float,
         size: int,
+        symbol: Union[str, None] = None,
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ) -> int:
@@ -350,9 +351,9 @@ class Agent(SimulationObject):
 
     def buy(
         self,
-        symbol: str,
         size: int,
         exchange_name: Union[str, None] = None,
+        symbol: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ) -> int:
         return self.market_order(
@@ -365,9 +366,9 @@ class Agent(SimulationObject):
 
     def sell(
         self,
-        symbol: str,
         size: int,
         exchange_name: Union[str, None] = None,
+        symbol: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ) -> int:
         return self.market_order(
