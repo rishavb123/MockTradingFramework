@@ -467,6 +467,12 @@ class Exchange(SimulationObject):
         self.__tick_size = tick_size
         self.__order_fee = order_fee
 
+    def get_account_holdings(self, agent):
+        return {
+            symbol: self.__accounts[agent.global_id].get_holding()
+            for symbol in ([Account.CASH_SYM] + list(self.__products.keys()))
+        }
+
     def place_order(self, order: Order) -> None:
         self.__accounts[order.sender.global_id].update_holding(
             Account.CASH_SYM, -self.order_fee
