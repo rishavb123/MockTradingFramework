@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import Union
-from typing import Self
+from typing import Union, Self, List
 
 import time
 import threading
@@ -62,6 +61,7 @@ class Simulation(threading.Thread):
         dt: Union[float, None] = None,
         iter: int = 1e5,
         lock: Union[threading.Lock, None] = None,
+        simulation_objs: List[SimulationObject] = [],
     ) -> None:
         super().__init__()
 
@@ -76,6 +76,8 @@ class Simulation(threading.Thread):
         self.iter = iter
 
         self.lock = threading.Lock() if lock is None else lock
+
+        [self.add_object(obj) for obj in simulation_objs]
 
     def add_object(self, object: SimulationObject) -> None:
         if object.z_index not in self.__objects:
