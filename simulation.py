@@ -1,5 +1,9 @@
 from __future__ import annotations
 from typing import Union
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 import time
 import threading
@@ -50,6 +54,10 @@ class SimulationObject:
     @staticmethod
     def get_object(global_id: str) -> SimulationObject:
         return SimulationObject.__objects.get(global_id, None)
+    
+    @classmethod
+    def get_instance(cls, id: int) -> Self:
+        return SimulationObject.get_object(cls.to_global_id(id))
 
 
 class Simulation(threading.Thread):
