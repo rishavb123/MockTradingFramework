@@ -1,4 +1,8 @@
 from __future__ import annotations
+from typing import Union
+
+import time
+import threading
 
 
 class Time:
@@ -35,9 +39,23 @@ class SimulationObject:
         return SimulationObject.__objects.get(global_id, None)
 
 
-class Simulation:
-    def __init__(self) -> None:
+class Simulation(threading.Thread):
+    def __init__(
+        self,
+        dt: Union[float, None] = None,
+        iter: int = 1e5,
+        lock: Union[threading.Lock, None] = None,
+    ) -> None:
+        super().__init__()
+
         self.__objects = []
+        self.last_update = 0
+        self.should_update = True
+
+        self.dt = dt
+        self.iter = iter
+
+        self.lock = threading.Lock() if lock is None else lock
 
     def add_object(self, object: SimulationObject) -> None:
         self.__objects.append(object)
@@ -47,3 +65,18 @@ class Simulation:
             obj.update()
 
         Time.incr_time()
+        self.should_update = False
+
+    def manual_update(self) -> None:
+        with self.lock:
+            self.should_update = True
+
+    def run(self) -> None:
+        while Time.now < self.iter:
+            cur_time = time.time()
+            if self.dt is not None and cur_time - self.last_update > self.dt:
+                self.should_update = True
+                self.last_update = cur_time
+            with self.lock:
+                if self.should_update:
+                    self.update()
