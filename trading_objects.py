@@ -16,44 +16,88 @@ class Order(SimulationObject):
     def __init__(
         self,
         sender: Agent,
+        symbol: str,
         dir: int,
         price: float,
         size: int,
+        exchange: Exchange,
         frames_to_expire: Union[int, None] = None,
     ) -> None:
         super().__init__()
 
-        self.sender = sender
-        self.dir = dir
-        self.price = price
-        self.size = size
-        self.frames_to_expire = frames_to_expire
-        self.expired = frames_to_expire == 0
+        self.__symbol = symbol
+        self.__sender = sender
+        self.__dir = dir
+        self.__price = price
+        self.__size = size
+        self.__exchange = exchange
+        self.__frames_to_expire = frames_to_expire
+        self.__expired = frames_to_expire == 0
+        self.__cancelled = False
+
+    def place(self) -> int:
+        self.__exchange.place_order(self)
+        return self.id
 
     def update(self) -> None:
-        if self.frames_to_expire is None:
-            self.frames_to_expire -= 1
-            if self.frames_to_expire <= 0:
-                self.expired = True
+        if self.__frames_to_expire is None:
+            self.__frames_to_expire -= 1
+            if self.__frames_to_expire <= 0:
+                self.__expired = True
 
-    def filled_or_expired(self) -> bool:
-        return self.size == 0 or self.expired
+    def decrement_size(self, amount: int, book: OrderBook) -> None:
+        if isinstance(book, OrderBook):
+            self.__size -= amount
+
+    def voided(self) -> bool:
+        return self.__size == 0 or self.__expired or self.__cancelled
 
     def is_bid(self) -> bool:
-        return self.dir == Order.BUY_DIR
+        return self.__dir == Order.BUY_DIR
 
     def is_ask(self) -> bool:
-        return self.dir == Order.SELL_DIR
+        return self.__dir == Order.SELL_DIR
+
+    def cancel(self) -> None:
+        self.__cancelled = True
+
+    @property
+    def symbol(self):
+        return self.__symbol
+
+    @property
+    def sender(self):
+        return self.__sender
+
+    @property
+    def dir(self):
+        return self.__dir
+
+    @property
+    def price(self):
+        return self.__price
+
+    @property
+    def size(self):
+        return self.__size
+
+    @property
+    def exchange(self):
+        return self.__exchange
+
+    @property
+    def frames_to_expire(self):
+        return self.__frames_to_expire
 
     def display_str(self) -> str:
         frames_to_expire = (
-            "" if self.frames_to_expire is None else self.frames_to_expire
+            "" if self.__frames_to_expire is None else self.__frames_to_expire
         )
 
         return (
             f"{self.id          :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
-            f"{self.price       :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
-            f"{self.size        :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
+            f"{self.__price       :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
+            f"{self.__size        :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}"
             f"{frames_to_expire :<{Order.DISPLAY_COLUMN_WIDTH}}{Order.margin}\n"
         )
 
@@ -157,55 +201,24 @@ class OrderBook(SimulationObject):
                     matched_bid.sender,
                     matched_ask.sender,
                 )
-            matched_ask.size -= trade_size
-            matched_bid.size -= trade_size
-            if matched_bid.filled_or_expired():
+            matched_ask.decrement_size(trade_size, self)
+            matched_bid.decrement_size(trade_size, self)
+            if matched_bid.voided():
                 self.bids.pop()
-            if matched_ask.filled_or_expired():
+            if matched_ask.voided():
                 self.asks.pop()
 
     def __clean_orders(self) -> None:
-        self.bids = [order for order in self.bids if not order.filled_or_expired()]
-        self.asks = [order for order in self.asks if not order.filled_or_expired()]
+        self.bids = [order for order in self.bids if not order.voided()]
+        self.asks = [order for order in self.asks if not order.voided()]
 
     def __cancel_orders(self, *order_ids: List[int]) -> None:
         order_ids = set(order_ids)
         self.bids = [order for order in self.bids if order.id not in order_ids]
         self.asks = [order for order in self.asks if order.id not in order_ids]
 
-    def bid(
-        self,
-        sender: Agent,
-        price: float,
-        size: int,
-        frames_to_expire: Union[int, None] = None,
-    ) -> None:
-        self._orders_to_place.append(
-            Order(
-                sender=sender,
-                dir=Order.BUY_DIR,
-                price=price,
-                size=size,
-                frames_to_expire=frames_to_expire,
-            )
-        )
-
-    def ask(
-        self,
-        sender: Agent,
-        price: float,
-        size: int,
-        frames_to_expire: Union[int, None] = None,
-    ) -> None:
-        self._orders_to_place.append(
-            Order(
-                sender=sender,
-                dir=Order.SELL_DIR,
-                price=price,
-                size=size,
-                frames_to_expire=frames_to_expire,
-            )
-        )
+    def place_order(self, order: Order) -> None:
+        self._orders_to_place.append(order)
 
     def cancel_order(self, order_id: int) -> None:
         self._orders_to_cancel.append(order_id)
@@ -213,6 +226,7 @@ class OrderBook(SimulationObject):
     def update(self) -> None:
         self.__place_orders(*self._orders_to_place)
         self.__cancel_orders(*self._orders_to_cancel)
+        self.__clean_orders()
         self.__match_orders()
         self.__clean_orders()
         self._orders_to_place = []
@@ -249,12 +263,73 @@ class Agent(SimulationObject):
     def __init__(self) -> None:
         super().__init__()
         self.exchanges = {}
+        self.open_orders = []
 
     def register_exchange(self, exchange: Exchange) -> None:
         self.exchanges[exchange.name] = exchange
 
+    def limit_order(
+        self,
+        symbol: str,
+        dir: int,
+        price: float,
+        size: int,
+        exchange_name: Union[str, None] = None,
+        frames_to_expire: Union[int, None] = None,
+    ):
+        exchange = (
+            list(self.exchanges.values())[0]
+            if exchange_name is None
+            else self.exchanges[exchange_name]
+        )
+        order = Order(
+            sender=self,
+            symbol=symbol,
+            dir=dir,
+            price=price,
+            size=size,
+            exchange=exchange,
+            frames_to_expire=frames_to_expire,
+        )
+        self.open_orders(order)
+        return order.place()
+
+    def bid(
+        self,
+        symbol: str,
+        price: float,
+        size: int,
+        exchange_name: Union[str, None] = None,
+        frames_to_expire: Union[int, None] = None,
+    ) -> int:
+        return self.limit_order(
+            symbol=symbol,
+            dir=Order.BUY_DIR,
+            price=price,
+            size=size,
+            exchange_name=exchange_name,
+            frames_to_expire=frames_to_expire,
+        )
+
+    def ask(
+        self,
+        symbol: str,
+        price: float,
+        size: int,
+        exchange_name: Union[str, None] = None,
+        frames_to_expire: Union[int, None] = None,
+    ) -> int:
+        return self.limit_order(
+            symbol=symbol,
+            dir=Order.SELL_DIR,
+            price=price,
+            size=size,
+            exchange_name=exchange_name,
+            frames_to_expire=frames_to_expire,
+        )
+
     def update(self) -> None:
-        return super().update()
+        self.open_orders = [order for order in self.open_orders if not order.voided()]
 
     @property
     def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:
@@ -278,7 +353,7 @@ class Account(SimulationObject):
     def set_holding(self, symbol: str, val: int) -> None:
         self.__holdings[symbol] = val
 
-    def add_holding(self, symbol: str, val: int) -> None:
+    def update_holding(self, symbol: str, val: int) -> None:
         self.set_holding(symbol, val=val + self.get_holding(symbol))
 
 
@@ -342,14 +417,18 @@ class Exchange(SimulationObject):
         self.__tick_size = tick_size
         self.__order_fee = order_fee
 
+    def place_order(self, order: Order) -> None:
+        self.__accounts[order.sender.global_id].update_holding(Account.CASH_SYM, -self.order_fee)
+        self.__order_books[order.__symbol].place_order(order)
+
     def execute_trade(
         self, symbol: str, price: float, size: int, buyer: Agent, seller: Agent
     ) -> None:
         self.__products[symbol].record_trade(price, size)
-        self.__accounts[buyer.global_id].add_holding(Account.CASH_SYM, -price * size)
-        self.__accounts[buyer.global_id].add_holding(symbol, size)
-        self.__accounts[seller.global_id].add_holding(Account.CASH_SYM, price * size)
-        self.__accounts[seller.global_id].add_holding(symbol, -size)
+        self.__accounts[buyer.global_id].update_holding(Account.CASH_SYM, -price * size)
+        self.__accounts[buyer.global_id].update_holding(symbol, size)
+        self.__accounts[seller.global_id].update_holding(Account.CASH_SYM, price * size)
+        self.__accounts[seller.global_id].update_holding(symbol, -size)
 
     def register_product(self, product: Product) -> bool:
         if product.symbol not in self.__order_books:
@@ -380,3 +459,6 @@ class Exchange(SimulationObject):
     @property
     def symbols(self) -> List[str]:
         return [product.symbol for product in self.__products.values()]
+
+    def trades_symbol(self, symbol) -> bool:
+        return symbol in self.__products
