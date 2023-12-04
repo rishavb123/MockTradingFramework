@@ -261,8 +261,8 @@ class Agent(SimulationObject):
     def register_exchange(self, exchange: Exchange) -> None:
         self.exchanges[exchange.name] = exchange
 
-    def cancel_order(self, order_id: int) -> None:
-        Order.get_instance(order_id).cancel()
+    def cancel_order(self, order: Order) -> None:
+        order.cancel()
 
     def limit_order(
         self,
@@ -273,6 +273,8 @@ class Agent(SimulationObject):
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ):
+        if (exchange_name is not None and exchange_name not in self.exchanges) or len(self.exchanges.values()) == 0:
+            raise Exception("Exchange does not exist")
         exchange = (
             list(self.exchanges.values())[0]
             if exchange_name is None
