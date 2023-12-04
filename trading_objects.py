@@ -266,20 +266,25 @@ class Agent(SimulationObject):
 
     def limit_order(
         self,
-        symbol: str,
         dir: int,
         price: float,
         size: int,
+        symbol: Union[str, None] = None,
         exchange_name: Union[str, None] = None,
         frames_to_expire: Union[int, None] = None,
     ):
-        if (exchange_name is not None and exchange_name not in self.exchanges) or len(self.exchanges.values()) == 0:
+        if (exchange_name is not None and exchange_name not in self.exchanges) or len(
+            self.exchanges.values()
+        ) == 0:
             raise Exception("Exchange does not exist")
         exchange = (
             list(self.exchanges.values())[0]
             if exchange_name is None
             else self.exchanges[exchange_name]
         )
+        if symbol is None and len(exchange.symbols) == 0:
+            raise Exception("Symbol does not exist")
+        symbol = exchange.symbols[0] if symbol is None else symbol
         order = Order(
             sender=self,
             symbol=symbol,
@@ -393,7 +398,7 @@ class Account(SimulationObject):
         self.__holdings = {}
 
     def get_holding(self, symbol: str) -> int:
-        return self.__holdings.get(symbol)
+        return self.__holdings.get(symbol, 0)
 
     def set_holding(self, symbol: str, val: int) -> None:
         self.__holdings[symbol] = val
@@ -447,7 +452,7 @@ class Exchange(SimulationObject):
         order_fee: float = 0,
         name: Union[str, None] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(z_index=10)
         self.__name = self.global_id if name is None else name
 
         self.__products = {}
