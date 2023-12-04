@@ -3,7 +3,7 @@ from typing import Union
 from trading_objects import Agent, Order
 
 
-class SingleExchangeFixedAgent(Agent):
+class SingleProductFixedAgent(Agent):
     def __init__(
         self,
         fixed_bid: float,

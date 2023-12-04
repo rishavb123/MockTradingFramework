@@ -4,7 +4,7 @@ import threading
 from simulation import Simulation
 from trading_objects import Agent, Exchange, Product
 from command_display import CommandDisplay, Argument, Command
-from agents import SingleExchangeFixedAgent, SingleExchangeManualAgent
+from agents import SingleProductFixedAgent, SingleExchangeManualAgent
 
 
 class MarketSimulation(Simulation):
@@ -43,7 +43,7 @@ def main() -> None:
 
     symbols = ["AAAA", "BBBB", "CCCC"]
 
-    fixed_agents = [SingleExchangeFixedAgent(7, 13, 100, symbol) for symbol in symbols]
+    fixed_agents = [SingleProductFixedAgent(7, 13, 100, symbol) for symbol in symbols]
     manual_agent = SingleExchangeManualAgent()
 
     sim = MarketSimulation(
