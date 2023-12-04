@@ -546,6 +546,10 @@ class Exchange(SimulationObject):
                 self.__order_books[symbol].display_str(viewer=viewer, k=k), "\t\t"
             )
         return s + "\n\n"
+    
+    @property
+    def open(self) -> bool:
+        return self.simulation.started and not self.simulation.finished
 
     @property
     def order_fee(self) -> float:

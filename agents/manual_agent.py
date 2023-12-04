@@ -69,7 +69,11 @@ class SingleExchangeManualAgent(Agent):
                     short_name="ss",
                 ),
             ],
-            draw_fn=self.visualize,
+            draw_fn_map={
+                "market": self.visualize_market,
+                "holdings": self.visualize_holdings,
+                "positions": self.visualize_holdings,
+            },
             handle_event_fn=self.handle_event,
             font_size=12,
             command_font_size=16,
@@ -111,11 +115,12 @@ class SingleExchangeManualAgent(Agent):
             f"{order_info.size      :>{self.order_column_width}}{self.order_column_margin}"
         )
 
-    def visualize(self, x: int, y: int, w: int, h: int) -> None:
+    def visualize_market(self, x: int, y: int, w: int, h: int) -> None:
         if self.cur_symbol is None:
             self.select_symbol(self.cur_symbol)
 
         order_books = self.exchange.public_info()
+        market_open = self.exchange.open
         my_open_orders = set([order.id for order in self.open_orders])
 
         cur_x = x
@@ -211,6 +216,20 @@ class SingleExchangeManualAgent(Agent):
             if cur_x + show.x_incr > x + w:
                 cur_x = x
                 starting_y = show.bottom_y + self.gui.margin
+    
+        if not market_open:
+            block = self.gui.font.render(
+                "Market Closed!",
+                True,
+                self.order_book_color,
+            )
+            rect = block.get_rect()
+            rect.left = x + self.gui.margin
+            rect.bottom = y + h - self.gui.margin
+            self.gui.screen.blit(block, rect)
+
+    def visualize_holdings(self, x: int, y: int, w: int, h: int) -> None:
+        pass
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:

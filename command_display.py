@@ -68,14 +68,19 @@ class CommandDisplay:
         command_box_color: Tuple[int, int, int] = (30, 30, 30),
         output_color: Tuple[int, int, int] = (255, 255, 255),
         output_box_color: Tuple[int, int, int] = (50, 50, 50),
-        draw_fn: Union[Callable[[int, int, int, int], None], None] = None,
+        draw_fn_map: Dict[str, Callable[[int, int, int, int], None]] = {},
+        start_draw_state: Union[str, None] = None,
         handle_event_fn: Union[Callable[[pygame.event.Event], None], None] = None,
     ) -> None:
         super().__init__()
         self.commands = {}
 
+        default_draw_state = list(draw_fn_map.keys())[0]
+
         base_commands = [
-            Command(name="quit", f=self.quit, short_name="q"),
+            Command(f=self.quit, short_name="q"),
+            Command(f=self.view, short_name="v", args_definitions=[Argument(str, default_draw_state)]),
+            Command(f=self.view_idx, short_name="vi", args_definitions=[Argument(int, 0)]),
         ]
         self.add_commands(*(base_commands + commands))
 
@@ -106,11 +111,31 @@ class CommandDisplay:
         self.output_color = output_color
         self.output_box_color = output_box_color
 
-        self.draw_fn = draw_fn
+        if len(draw_fn_map) == 0:
+            self.draw_fn_map = {"empty": lambda:None}
+            self.draw_state = "empty"
+        else:
+            self.draw_fn_map = draw_fn_map
+            self.draw_state = default_draw_state if start_draw_state is None else start_draw_state
         self.handle_event_fn = handle_event_fn
 
     def quit(self) -> None:
         self.running = False
+
+    def view_idx(self, i):
+        v = list(self.draw_fn_map.keys())
+        if 0 <= i < len(v):
+            self.draw_state = v[i]
+            return f"Switched to {self.draw_state} view"
+        else:
+            return f"Index {i} view does not exist"
+
+    def view(self, s: str):
+        if s in self.draw_fn_map:
+            self.draw_state = s
+            return f"Switched to {s} view"
+        else:
+            return f"{s.title()} view does not exist"
 
     def add_commands(self, *commands: List[Command]) -> None:
         self.commands = (
@@ -247,13 +272,12 @@ class CommandDisplay:
             rect.left = self.margin
             rect.bottom = self.h - self.margin
 
-            if self.draw_fn is not None:
-                self.draw_fn(
-                    x=self.margin,
-                    y=self.margin,
-                    w=self.w - self.output_box_width - 2 * self.margin,
-                    h=self.h - rect.height - 3 * self.margin,
-                )
+            self.draw_fn_map[self.draw_state](
+                x=self.margin,
+                y=self.margin,
+                w=self.w - self.output_box_width - 2 * self.margin,
+                h=self.h - rect.height - 3 * self.margin,
+            )
 
             pygame.draw.rect(
                 self.screen,

@@ -89,6 +89,8 @@ class Simulation(threading.Thread):
         self.dt = dt
         self.paused = False
         self.killed = False
+        self.started = False
+        self.finished = False
         self.iter = iter
 
         self.lock = threading.Lock() if lock is None else lock
@@ -135,7 +137,15 @@ class Simulation(threading.Thread):
     def toggle_pause(self) -> None:
         self.paused = not self.paused
 
+    def on_start(self) -> None:
+        pass
+
+    def on_finish(self) -> None:
+        pass
+
     def run(self) -> None:
+        self.started = True
+        self.on_start()
         while Time.now < self.iter:
             cur_time = time.time()
             time_update = False
@@ -152,6 +162,8 @@ class Simulation(threading.Thread):
                     break
             if should_update:
                 self.update()
+        self.finished = True
+        self.on_finish()
 
     def connect_display(self, c: CommandDisplay):
         def quit():
