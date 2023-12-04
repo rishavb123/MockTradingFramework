@@ -72,7 +72,6 @@ class SingleExchangeManualAgent(Agent):
             draw_fn_map={
                 "market": self.visualize_market,
                 "holdings": self.visualize_holdings,
-                "positions": self.visualize_holdings,
             },
             handle_event_fn=self.handle_event,
             font_size=12,
