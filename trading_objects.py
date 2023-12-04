@@ -29,7 +29,7 @@ class Order(SimulationObject):
     ) -> None:
         super().__init__()
 
-        self.__symbol = symbol
+        self.__symbol = symbol.upper()
         self.__sender = sender
         self.__dir = dir
         self.__price = price
@@ -130,7 +130,7 @@ class OrderBook(SimulationObject):
 
         self.bids = []
         self.asks = []
-        self.symbol = symbol
+        self.symbol = symbol.upper()
         self.exchange = exchange
 
         self._orders_to_place = []
@@ -196,6 +196,7 @@ class OrderBook(SimulationObject):
             len(self.bids) > 0
             and len(self.asks) > 0
             and self.bids[-1].price >= self.asks[-1].price
+            and self.bids[-1].sender != self.asks[-1].sender
         ):
             matched_bid = self.bids[-1]
             matched_ask = self.asks[-1]
@@ -204,7 +205,7 @@ class OrderBook(SimulationObject):
             else:
                 trade_price = matched_ask.price
             trade_size = min(matched_bid.size, matched_ask.size)
-            if self.exchange is not None and matched_bid.sender != matched_ask.sender:
+            if self.exchange is not None:
                 self.exchange.execute_trade(
                     self.symbol,
                     trade_price,
@@ -424,13 +425,13 @@ class Account(SimulationObject):
         self.__holdings = {}
 
     def get_holding(self, symbol: str) -> int:
-        return self.__holdings.get(symbol, 0)
+        return self.__holdings.get(symbol.upper(), 0)
 
     def set_holding(self, symbol: str, val: int) -> None:
-        self.__holdings[symbol] = val
+        self.__holdings[symbol.upper()] = val
 
     def update_holding(self, symbol: str, val: int) -> None:
-        self.set_holding(symbol, val=val + self.get_holding(symbol))
+        self.set_holding(symbol.upper(), val=val + self.get_holding(symbol))
 
 
 class Trade(SimulationObject):
@@ -439,7 +440,7 @@ class Trade(SimulationObject):
     ) -> None:
         super().__init__()
 
-        self.symbol = symbol
+        self.symbol = symbol.upper()
         self.price = price
         self.size = size
         self.buyer_id = buyer_id
@@ -450,7 +451,7 @@ class Trade(SimulationObject):
 class Product(SimulationObject):
     def __init__(self, symbol: str) -> None:
         super().__init__()
-        self.symbol = symbol
+        self.symbol = symbol.upper()
         self.num_trades = 0
         self.volume = 0
         self.trades = []
@@ -510,7 +511,7 @@ class Exchange(SimulationObject):
     def execute_trade(
         self, symbol: str, price: float, size: int, buyer: Agent, seller: Agent
     ) -> None:
-        self.__products[symbol].record_trade(price, size, buyer, seller)
+        self.__products[symbol.upper()].record_trade(price, size, buyer, seller)
         self.__accounts[buyer.global_id].update_holding(Account.CASH_SYM, -price * size)
         self.__accounts[buyer.global_id].update_holding(symbol, size)
         self.__accounts[seller.global_id].update_holding(Account.CASH_SYM, price * size)

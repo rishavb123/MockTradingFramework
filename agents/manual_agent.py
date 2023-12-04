@@ -71,15 +71,17 @@ class SingleExchangeManualAgent(Agent):
             ],
             draw_fn=self.visualize,
             handle_event_fn=self.handle_event,
+            font_size=12,
+            command_font_size=16,
         )
 
     def select_symbol(self, symbol):
         symbols = self.exchange.symbols
         if symbol is None:
-            self.cur_symbol = symbols[0]
-        if symbol not in symbols:
+            symbol = symbols[0]
+        if symbol.upper() not in symbols:
             return f"Symbol {symbol} does not exist"
-        self.cur_symbol = symbol
+        self.cur_symbol = symbol.upper()
         return f"Selected {self.cur_symbol}"
 
     def cancel(self, order_id: int) -> None:
@@ -159,7 +161,7 @@ class SingleExchangeManualAgent(Agent):
             show.x_incr = None
             show.bottom_y = None
 
-            symbol_header = (" " + symbol + " ").center(
+            symbol_header = (" " + symbol.upper() + " ").center(
                 3 * (self.order_column_width + self.order_column_margin_len), "-"
             )
             show(symbol_header)

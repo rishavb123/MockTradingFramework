@@ -27,20 +27,23 @@ class Command:
         self.f_kwargs = f_kwargs
 
     def run(self, str_args: List[str]) -> None:
-        args = []
-        i = 0
-        for arg_definition in self.args_definitions:
-            if isinstance(arg_definition, Argument):
-                str_arg = None
-                if i < len(str_args):
-                    str_arg = str_args[i]
-                    if len(str_arg) == 0:
-                        str_arg = None
-                args.append(arg_definition.get(str_arg))
-                i += 1
-            else:
-                args.append(arg_definition)
-        return self.f(*args, **self.f_kwargs)
+        try:
+            args = []
+            i = 0
+            for arg_definition in self.args_definitions:
+                if isinstance(arg_definition, Argument):
+                    str_arg = None
+                    if i < len(str_args):
+                        str_arg = str_args[i]
+                        if len(str_arg) == 0:
+                            str_arg = None
+                    args.append(arg_definition.get(str_arg))
+                    i += 1
+                else:
+                    args.append(arg_definition)
+            return self.f(*args, **self.f_kwargs)
+        except Exception as e:
+            return f"{e.__class__.__name__}: {e}"
 
 
 class CommandDisplay:

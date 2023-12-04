@@ -18,6 +18,8 @@ class SingleExchangeFixedAgent(Agent):
         self.fixed_symbol = fixed_symbol
 
     def update(self) -> None:
+        super().update()
+
         have_bid = False
         have_ask = False
 
