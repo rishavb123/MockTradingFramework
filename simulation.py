@@ -33,3 +33,17 @@ class SimulationObject:
     @staticmethod
     def get_object(global_id: str) -> SimulationObject:
         return SimulationObject.__objects.get(global_id, None)
+
+
+class Simulation:
+    def __init__(self) -> None:
+        self.__objects = []
+
+    def add_object(self, object: SimulationObject) -> None:
+        self.__objects.append(object)
+
+    def update(self) -> None:
+        for obj in self.__objects:
+            obj.update()
+
+        Time.incr_time()
