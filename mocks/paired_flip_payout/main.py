@@ -13,7 +13,10 @@ from .products import PairedFlipProduct
 def main() -> None:
     products = [PairedFlipProduct(symbol) for symbol in SYMBOLS]
 
-    agents = [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)] + [HedgeFund(), ManualAgent()]
+    agents = [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)] + [
+        HedgeFund(),
+        ManualAgent(),
+    ]
     manual_agent = agents[-1]
 
     exchange = Exchange(
@@ -42,6 +45,7 @@ def main() -> None:
         s += add("RETAIL_MIN_CONFIDENCE", RETAIL_MIN_CONFIDENCE)
         s += add("RETAIL_SIZING_RANGE", RETAIL_SIZING_RANGE)
         s += add("RETAIL_ORDER_UPDATE_FREQ", RETAIL_ORDER_UPDATE_FREQ)
+        s += add("RETAIL_TRADER_SYMBOL_RATIO", RETAIL_TRADER_SYMBOL_RATIO)
         s += add("MOCK_NAME", MOCK_NAME)
 
         return s

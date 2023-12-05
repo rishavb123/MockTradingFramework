@@ -1,3 +1,5 @@
+import numpy as np
+
 from trading_objects import Agent, Exchange, Event
 
 from .config import *
@@ -49,7 +51,16 @@ class RetailTrader(Agent):
 
         self.sizing = np.random.randint(*RETAIL_SIZING_RANGE)
 
-        self.symbol = SYMBOLS[np.random.randint(len(SYMBOLS))]
+        symbol_picker = np.random.random()
+        rng_ranges = np.cumsum(RETAIL_TRADER_SYMBOL_RATIO)
+
+        symbol_idx = None
+
+        for i in range(len(rng_ranges) - 1, -1, -1):
+            if symbol_picker < rng_ranges[i]:
+                symbol_idx = i
+
+        self.symbol = SYMBOLS[symbol_idx]
 
     def update(self) -> None:
         order_books = self.exchange.public_info()
