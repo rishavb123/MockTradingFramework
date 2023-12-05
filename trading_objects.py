@@ -556,7 +556,7 @@ class Exchange(SimulationObject):
             for agent_id in self.__accounts:
                 product_holding = self.__accounts[agent_id].get_holding(symbol)
                 self.__accounts[agent_id].set_holding(symbol, 0)
-                self.__accounts[agent_id].update_holding(symbol, product_holding * payout)
+                self.__accounts[agent_id].update_holding(Account.CASH_SYM, product_holding * payout)
     
     @property
     def open(self) -> bool:
