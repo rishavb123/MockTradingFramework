@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pygame
 
+from util import effective_inf
 from simulation import Time
 from trading_objects import Agent, Exchange, Order, Event
 from command_display import CommandDisplay, Command, Argument
@@ -35,7 +36,7 @@ class ManualAgent(Agent):
                 Command(
                     self.order_id_wrapper(self.bid),
                     args_definitions=[
-                        Argument(float, float("inf")),
+                        Argument(float, effective_inf),
                         Argument(int, 1),
                         Argument(int, None),
                     ],

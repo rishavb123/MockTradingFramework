@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Union, List, Dict, Tuple, Callable
 from collections import namedtuple
 
-from util import prefix_lines
+from util import prefix_lines, effective_inf
 from simulation import Time, SimulationObject
 
 
@@ -304,8 +304,7 @@ class Agent(SimulationObject):
         if symbol is None and len(exchange.symbols) == 0:
             raise Exception("Symbol does not exist")
         symbol = exchange.symbols[0] if symbol is None else symbol
-        if price != float("inf"):
-            price = round(round(price / exchange.tick_size) * exchange.tick_size, 2)
+        price = round(round(price / exchange.tick_size) * exchange.tick_size, 2)
         order = Order(
             sender=self,
             symbol=symbol,
@@ -330,7 +329,7 @@ class Agent(SimulationObject):
         return self.limit_order(
             symbol=symbol,
             dir=dir,
-            price=(0 if dir == Order.SELL_DIR else float("inf")),
+            price=(0 if dir == Order.SELL_DIR else effective_inf),
             size=size,
             exchange_name=exchange_name,
             frames_to_expire=frames_to_expire,

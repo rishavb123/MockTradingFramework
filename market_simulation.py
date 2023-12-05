@@ -5,7 +5,7 @@ matplotlib.use("Agg")
 import os
 import shutil
 
-from typing import Union, List
+from typing import Union, List, Callable
 
 import threading
 import numpy as np
@@ -31,6 +31,7 @@ class MarketSimulation(Simulation):
         metrics_aggregator: Union[MetricsAggregator, None] = None,
         metrics_plots: List[MetricsPlots] = [],
         save_results_path: Union[str, None] = None,
+        save_run_info: Union[Callable[[None], str], None] = None,
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
@@ -39,6 +40,7 @@ class MarketSimulation(Simulation):
         self.display_to_console = display_to_console
         self.payout_on_finish = payout_on_finish
         self.save_results_path = save_results_path
+        self.save_run_info = save_run_info
         self.metrics_aggregator = metrics_aggregator
         self.metrics_plots = metrics_plots
         for exchange in exchanges:
@@ -104,6 +106,9 @@ class MarketSimulation(Simulation):
             if self.metrics_aggregator is not None:
                 for plot in self.metrics_plots:
                     plot.plot(self.metrics_aggregator, self.save_results_path)
+
+            with open(f"{self.save_results_path}/info.txt", "w") as f:
+                f.write(self.save_run_info())
 
 def main() -> None:
     symbols = ["AAAA", "BBBB", "CCCC"]
