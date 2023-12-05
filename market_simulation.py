@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from simulation import Simulation
 from trading_objects import Agent, Exchange, Product, Account
 from agents import SingleProductFixedAgent, ManualAgent
+from metrics import MetricsAggregator, MetricsPlots
 
 
 class MarketSimulation(Simulation):
@@ -27,22 +28,28 @@ class MarketSimulation(Simulation):
         lock: Union[threading.Lock, None] = None,
         display_to_console: bool = False,
         payout_on_finish: bool = True,
+        metrics_aggregator: Union[MetricsAggregator, None] = None,
+        metrics_plots: List[MetricsPlots] = [],
         save_results_path: Union[str, None] = None,
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
+            metrics_aggregators = [metrics_aggregators]
         self.exchanges = exchanges
         self.agents = agents
         self.display_to_console = display_to_console
         self.payout_on_finish = payout_on_finish
         self.save_results_path = save_results_path
+        self.metrics_aggregator = metrics_aggregator
+        self.metrics_plots = metrics_plots
         for exchange in exchanges:
             for product in products:
                 exchange.register_product(product)
             for agent in agents:
                 exchange.register_agent(agent)
-
         simulation_objs = exchanges + agents
+        if self.metrics_aggregator is not None:
+            simulation_objs.append(self.metrics_aggregator)
         super().__init__(dt, iter, lock, simulation_objs)
 
     def update(self) -> None:
@@ -95,6 +102,9 @@ class MarketSimulation(Simulation):
             plt.title("PNL by Agent Class")
             plt.savefig(f"{self.save_results_path}/pnl_by_agent_cls.png")
 
+            if self.metrics_aggregator is not None:
+                for plot in self.metrics_plots:
+                    plot.plot(self.metrics_aggregator, self.save_results_path)
 
 def main() -> None:
     symbols = ["AAAA", "BBBB", "CCCC"]
