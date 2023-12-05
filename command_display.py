@@ -104,7 +104,7 @@ class CommandDisplay:
         self.command_buffer = ""
         self.log_buffer = []
         self.ran_command_strs = []
-        self.ran_command_strs_idx = -1
+        self.ran_command_strs_idx = 0
 
         self.command_font = pygame.font.SysFont(
             font, command_font_size, command_font_bold
@@ -145,7 +145,8 @@ class CommandDisplay:
     def view_up_or_down(self, dir: int) -> None:
         i = list(self.draw_fn_map.keys()).index(self.draw_state)
         i += dir
-        self.view_idx(max(min(i, len(self.draw_fn_map)), 0))
+        self.view_idx(i % len(self.draw_fn_map))
+        return f"Switched to {self.draw_state} view"
 
     def view(self, s: str) -> None:
         if s in self.draw_fn_map:
@@ -169,10 +170,11 @@ class CommandDisplay:
         self.h = h
         self.screen = pygame.display.set_mode((w, h))
 
-    def run_command(self, command_str):
+    def run_command(self, command_str: str, add_to_ran_commands: str=True) -> None:
         split_command = command_str.split(CommandDisplay.SPLIT_CHAR)
         command_name = split_command[0]
-        self.ran_command_strs.append(command_str)
+        if add_to_ran_commands:
+            self.ran_command_strs.append(command_str)
         if command_name in self.commands:
             result = self.commands[command_name].run(split_command[1:])
             if result is not None:
@@ -260,9 +262,10 @@ class CommandDisplay:
                         elif event.key == pygame.K_UP:
                             if self.ran_command_strs_idx > -len(self.ran_command_strs):
                                 self.ran_command_strs_idx -= 1
-                            self.command_buffer = self.ran_command_strs[
-                                self.ran_command_strs_idx
-                            ]
+                            if len(self.ran_command_strs) != 0:
+                                self.command_buffer = self.ran_command_strs[
+                                    self.ran_command_strs_idx
+                                ]
                         elif event.key == pygame.K_DOWN:
                             if self.ran_command_strs_idx < 0:
                                 self.ran_command_strs_idx += 1
@@ -281,7 +284,7 @@ class CommandDisplay:
                             self.cur_edit_mode = CommandDisplay.COMMAND_EDIT_MODE
                         if event.key in self.macros:
                             command_str = self.macros[event.key] if type(self.macros[event.key]) == str else self.macros[event.key]()
-                            self.run_command(command_str)
+                            self.run_command(command_str, False)
 
                     if self.handle_event_fn is not None:
                         self.handle_event_fn(event)
