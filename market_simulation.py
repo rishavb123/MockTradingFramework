@@ -3,7 +3,6 @@ import threading
 
 from simulation import Simulation
 from trading_objects import Agent, Exchange, Product
-from command_display import CommandDisplay, Argument, Command
 from agents import SingleProductFixedAgent, SingleExchangeManualAgent
 
 
