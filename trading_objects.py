@@ -235,6 +235,9 @@ class OrderBook(SimulationObject):
         self.__clean_orders()
         self.__match_orders()
         self.__clean_orders()
+        for order in self._orders_to_place:
+            if not order.voided():
+                self.exchange.send_order_update(order)
         self._orders_to_place = []
         self._orders_to_cancel = []
 
@@ -536,6 +539,12 @@ class Exchange(SimulationObject):
         }
 
     def place_order(self, order: Order) -> None:
+        self.__accounts[order.sender.global_id].update_holding(
+            Account.CASH_SYM, -self.order_fee
+        )
+        self.__order_books[order.symbol].place_order(order)
+
+    def send_order_update(self, order: Order) -> None:
         self.__on_event(
             Event(
                 order.symbol,
@@ -545,10 +554,6 @@ class Exchange(SimulationObject):
                 order.id,
             )
         )
-        self.__accounts[order.sender.global_id].update_holding(
-            Account.CASH_SYM, -self.order_fee
-        )
-        self.__order_books[order.symbol].place_order(order)
 
     def execute_trade(
         self, symbol: str, price: float, size: int, buyer: Agent, seller: Agent
