@@ -46,6 +46,12 @@ class SimulationObject:
     def display_str(self) -> str:
         return self.global_id
 
+    def on_start(self) -> None:
+        pass
+
+    def on_finish(self) -> None:
+        pass
+
     def __del__(self) -> None:
         del SimulationObject.__objects[self.global_id]
 
@@ -139,10 +145,14 @@ class Simulation(threading.Thread):
         self.paused = not self.paused
 
     def on_start(self) -> None:
-        pass
+        for z in self.__z_ordering:
+            for obj in self.__objects[z]:
+                obj.on_start()
 
     def on_finish(self) -> None:
-        pass
+        for z in self.__z_ordering:
+            for obj in self.__objects[z]:
+                obj.on_finish()
 
     def run(self) -> None:
         self.started = True
@@ -170,6 +180,7 @@ class Simulation(threading.Thread):
         def quit():
             c.running = False
             self.kill()
+
         c.add_commands(
             Command(f=self.toggle_pause, short_name="p"),
             Command(f=self.manual_update, short_name="m"),
