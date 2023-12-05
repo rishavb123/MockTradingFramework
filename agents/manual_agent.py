@@ -113,13 +113,33 @@ class SingleExchangeManualAgent(Agent):
             f"{order_info.price     :^{self.order_column_width}}{self.order_column_margin}"
             f"{order_info.size      :>{self.order_column_width}}{self.order_column_margin}"
         )
+    
+    def visualize_market_status(self, x: int, y: int, w: int, h: int) -> None:
+        market_open = self.exchange.open
+        market_paused = self.simulation.paused
+
+        market_status = "Open"
+
+        if not market_open:
+            market_status = "Closed"
+        elif market_paused:
+            market_status = "Paused"
+
+        block = self.gui.font.render(
+            f"Market {market_status}!",
+            True,
+            self.order_book_color,
+        )
+        rect = block.get_rect()
+        rect.left = x + self.gui.margin
+        rect.bottom = y + h - self.gui.margin
+        self.gui.screen.blit(block, rect)
 
     def visualize_market(self, x: int, y: int, w: int, h: int) -> None:
         if self.cur_symbol is None:
             self.select_symbol(self.cur_symbol)
 
         order_books = self.exchange.public_info()
-        market_open = self.exchange.open
         my_open_orders = set([order.id for order in self.open_orders])
 
         cur_x = x
@@ -216,19 +236,41 @@ class SingleExchangeManualAgent(Agent):
                 cur_x = x
                 starting_y = show.bottom_y + self.gui.margin
     
-        if not market_open:
+        self.visualize_market_status(x, y, w, h)
+
+    def visualize_holdings(self, x: int, y: int, w: int, h: int) -> None:
+        
+        holdings = self.exchange.get_account_holdings(self)
+
+        def show_holding(symbol):
             block = self.gui.font.render(
-                "Market Closed!",
+                f"{symbol:<{self.order_column_width}}: {holdings[symbol]}",
                 True,
                 self.order_book_color,
             )
             rect = block.get_rect()
-            rect.left = x + self.gui.margin
-            rect.bottom = y + h - self.gui.margin
+            rect.left = show_holding.cur_x
+            rect.top = show_holding.cur_y
+            if show_holding.x_incr is None:
+                show_holding.x_incr = rect.width
+            show_holding.cur_y += rect.height
             self.gui.screen.blit(block, rect)
 
-    def visualize_holdings(self, x: int, y: int, w: int, h: int) -> None:
-        pass
+        show_holding.cur_x = x + self.gui.margin
+        show_holding.cur_y = y + self.gui.margin
+        show_holding.x_incr = None
+
+        for symbol in holdings:
+            show_holding(symbol)
+
+        pygame.draw.rect(
+            self.gui.screen,
+            self.order_book_color,
+            (x, y, show_holding.x_incr + 2 * self.gui.margin, show_holding.cur_y - y + self.gui.margin),
+            width=1,
+        )
+
+        self.visualize_market_status(x, y, w, h)
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:

@@ -498,7 +498,7 @@ class Exchange(SimulationObject):
 
     def get_account_holdings(self, agent):
         return {
-            symbol: self.__accounts[agent.global_id].get_holding()
+            symbol: self.__accounts[agent.global_id].get_holding(symbol)
             for symbol in ([Account.CASH_SYM] + list(self.__products.keys()))
         }
 
