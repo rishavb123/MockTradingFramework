@@ -34,7 +34,6 @@ class MarketSimulation(Simulation):
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
-            metrics_aggregators = [metrics_aggregators]
         self.exchanges = exchanges
         self.agents = agents
         self.display_to_console = display_to_console
