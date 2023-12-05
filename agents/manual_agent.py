@@ -246,6 +246,33 @@ class ManualAgent(Agent):
         rect = block.get_rect()
         rect.left = x + self.gui.margin
         rect.bottom = y + h - self.gui.margin
+
+        pygame.draw.rect(
+            self.gui.screen,
+            self.gui.background_color,
+            (
+                x,
+                y + h - rect.height - 2 * self.gui.margin,
+                w,
+                rect.height + 2 * self.gui.margin,
+            ),
+        )
+
+        self.gui.screen.blit(block, rect)
+
+        text = ""
+        if self.gui.cur_edit_mode == CommandDisplay.COMMAND_EDIT_MODE:
+            text = "Command Mode"
+        elif self.gui.cur_edit_mode == CommandDisplay.MACRO_EDIT_MODE:
+            text = "Macro Mode"
+        block = self.gui.font.render(
+            text,
+            True,
+            self.order_book_color,
+        )
+        rect = block.get_rect()
+        rect.centerx = x + w // 2
+        rect.bottom = y + h - self.gui.margin
         self.gui.screen.blit(block, rect)
 
         block = self.gui.font.render(
@@ -386,16 +413,20 @@ class ManualAgent(Agent):
     def visualize_holdings(self, x: int, y: int, w: int, h: int) -> None:
         holdings = self.exchange.get_account_holdings(self)
 
-        def show_holding(symbol):
+        def show_holding(symbol, text_override=None):
+            if text_override is None:
+                text = f"{symbol:<{self.order_column_width}}: {holdings[symbol]}"
+            else:
+                text = text_override
             block = self.gui.font.render(
-                f"{symbol:<{self.order_column_width}}: {holdings[symbol]}",
+                text,
                 True,
                 self.order_book_color,
             )
             rect = block.get_rect()
             rect.left = show_holding.cur_x
             rect.top = show_holding.cur_y
-            if show_holding.x_incr is None:
+            if show_holding.x_incr is None and text_override is None:
                 show_holding.x_incr = rect.width
             show_holding.cur_y += rect.height
             self.gui.screen.blit(block, rect)
@@ -403,6 +434,8 @@ class ManualAgent(Agent):
         show_holding.cur_x = x + self.gui.margin
         show_holding.cur_y = y + self.gui.margin
         show_holding.x_incr = None
+
+        show_holding(None, text_override="Holdings:")
 
         for symbol in holdings:
             show_holding(symbol)
@@ -415,6 +448,48 @@ class ManualAgent(Agent):
                 y,
                 show_holding.x_incr + 2 * self.gui.margin,
                 show_holding.cur_y - y + self.gui.margin,
+            ),
+            width=1,
+        )
+
+        def show_open_order(order_id, symbol, dir, price, size):
+            if dir == Order.BUY_DIR:
+                dir = "BID"
+            elif dir == Order.SELL_DIR:
+                dir = "ASK"
+            block = self.gui.font.render(
+                f"{order_id:<{self.order_column_width}}{symbol:<{self.order_column_width}}{dir:<{self.order_column_width}}{price:<{self.order_column_width}}{size:<{self.order_column_width}}",
+                True,
+                self.order_book_color,
+            )
+            rect = block.get_rect()
+            rect.left = show_open_order.cur_x
+            rect.top = show_open_order.cur_y
+            if show_open_order.x_incr is None:
+                show_open_order.x_incr = rect.width
+            show_open_order.cur_y += rect.height
+            self.gui.screen.blit(block, rect)
+
+        show_open_order.cur_x = x + show_holding.x_incr + 4 * self.gui.margin
+        show_open_order.cur_y = y + self.gui.margin
+        show_open_order.x_incr = None
+
+        show_open_order("Open Orders:", "", "", "", "")
+
+        show_open_order("ORDER ID", "SYMBOL", "DIR", "PRICE", "SIZE")
+
+        for order_id in self.open_orders:
+            order = self.open_orders[order_id]
+            show_open_order(order_id, order.symbol, order.dir, order.price, order.size)
+
+        pygame.draw.rect(
+            self.gui.screen,
+            self.order_book_color,
+            (
+                x + show_holding.x_incr + 3 * self.gui.margin,
+                y,
+                show_open_order.x_incr + 2 * self.gui.margin,
+                show_open_order.cur_y - y + self.gui.margin,
             ),
             width=1,
         )
