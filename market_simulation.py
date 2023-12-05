@@ -1,9 +1,19 @@
+import matplotlib
+
+matplotlib.use("Agg")
+
+import os
+import shutil
+
 from typing import Union, List
+
 import threading
+import numpy as np
+import matplotlib.pyplot as plt
 
 from simulation import Simulation
-from trading_objects import Agent, Exchange, Product
-from agents import SingleProductFixedAgent, SingleExchangeManualAgent
+from trading_objects import Agent, Exchange, Product, Account
+from agents import SingleProductFixedAgent, ManualAgent
 
 
 class MarketSimulation(Simulation):
@@ -17,6 +27,7 @@ class MarketSimulation(Simulation):
         lock: Union[threading.Lock, None] = None,
         display_to_console: bool = False,
         payout_on_finish: bool = True,
+        save_results_path: Union[str, None] = None,
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
@@ -24,6 +35,7 @@ class MarketSimulation(Simulation):
         self.agents = agents
         self.display_to_console = display_to_console
         self.payout_on_finish = payout_on_finish
+        self.save_results_path = save_results_path
         for exchange in exchanges:
             for product in products:
                 exchange.register_product(product)
@@ -41,17 +53,54 @@ class MarketSimulation(Simulation):
 
     def on_finish(self) -> None:
         super().on_finish()
+        if self.save_results_path is not None:
+            if os.path.exists(self.save_results_path):
+                shutil.rmtree(self.save_results_path)
+            os.mkdir(self.save_results_path)
         if self.payout_on_finish:
             for exchange in self.exchanges:
                 exchange.payout_for_holdings()
+        cash_results = [
+            sum(
+                [
+                    exchange.get_account_holdings(agent)[Account.CASH_SYM]
+                    for exchange in self.exchanges
+                ]
+            )
+            for agent in self.agents
+        ]
+        cash_results_by_cls = {}
+        for i in range(len(self.agents)):
+            cash = cash_results[i]
+            agent = self.agents[i]
+            if agent.__class__ not in cash_results_by_cls:
+                cash_results_by_cls[agent.__class__] = []
+            cash_results_by_cls[agent.__class__].append(cash)
+        agent_classes = [c for c in cash_results_by_cls]
+        cls_names = [c.__name__ for c in agent_classes]
+        cash_means_by_cls = [np.mean(cash_results_by_cls[c]) for c in agent_classes]
+        cash_stds_by_cls = [np.std(cash_results_by_cls[c]) for c in agent_classes]
+
+        if self.save_results_path:
+            plt.figure()
+            plt.bar(
+                cls_names,
+                cash_means_by_cls,
+            )
+            plt.errorbar(
+                cls_names, cash_means_by_cls, yerr=cash_stds_by_cls, fmt="o", c="red"
+            )
+            plt.xlabel("Agent Class")
+            plt.ylabel("PNL")
+            plt.title("PNL by Agent Class")
+            plt.savefig(f"{self.save_results_path}/pnl_by_agent_cls.png")
 
 
 def main() -> None:
-
     symbols = ["AAAA", "BBBB", "CCCC"]
 
     fixed_agents = [SingleProductFixedAgent(7, 13, 100, symbol) for symbol in symbols]
-    manual_agent = SingleExchangeManualAgent()
+    manual_agent = ManualAgent()
 
     sim = MarketSimulation(
         exchanges=Exchange(
