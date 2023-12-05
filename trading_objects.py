@@ -405,6 +405,10 @@ class Agent(SimulationObject):
         if order.sender == self:
             order.cancel()
             return order_id
+        
+    def cancel_all_open_orders(self) -> None:
+        for order_id in self.open_orders:
+            self.cancel(order_id)
 
     def update(self) -> None:
         self.open_orders = {
