@@ -1,6 +1,7 @@
 from typing import Callable, Tuple
 import pygame
 
+from simulation import Time
 from trading_objects import Agent, Order
 from command_display import CommandDisplay, Command, Argument
 
@@ -29,6 +30,7 @@ class SingleExchangeManualAgent(Agent):
                     args_definitions=[
                         Argument(float, float("inf")),
                         Argument(int, 1),
+                        Argument(int, None),
                     ],
                     short_name="b",
                 ),
@@ -37,6 +39,7 @@ class SingleExchangeManualAgent(Agent):
                     args_definitions=[
                         Argument(float, 0),
                         Argument(int, 1),
+                        Argument(int, None),
                     ],
                     short_name="a",
                 ),
@@ -44,6 +47,7 @@ class SingleExchangeManualAgent(Agent):
                     self.order_id_wrapper(self.take),
                     args_definitions=[
                         Argument(int, 1),
+                        Argument(int, None),
                     ],
                     short_name="t",
                 ),
@@ -51,6 +55,7 @@ class SingleExchangeManualAgent(Agent):
                     self.order_id_wrapper(self.sell),
                     args_definitions=[
                         Argument(int, 1),
+                        Argument(int, None),
                     ],
                     short_name="s",
                 ),
@@ -58,6 +63,7 @@ class SingleExchangeManualAgent(Agent):
                     self.cancel,
                     args_definitions=[
                         Argument(int, 0),
+                        Argument(int, None),
                     ],
                     short_name="c",
                 ),
@@ -65,6 +71,7 @@ class SingleExchangeManualAgent(Agent):
                     self.select_symbol,
                     args_definitions=[
                         Argument(str, None),
+                        Argument(int, None),
                     ],
                     short_name="ss",
                 ),
@@ -98,7 +105,8 @@ class SingleExchangeManualAgent(Agent):
         def g(
             *args,
         ):
-            order_id = f(*args, symbol=self.cur_symbol)
+            print("frames to expire:", args[-1])
+            order_id = f(*args[:-1], symbol=self.cur_symbol, exchange_name=None, frames_to_expire=args[-1])
             if order_id is None:
                 return f"{f.__name__.title()} failed."
             else:
@@ -132,6 +140,16 @@ class SingleExchangeManualAgent(Agent):
         )
         rect = block.get_rect()
         rect.left = x + self.gui.margin
+        rect.bottom = y + h - self.gui.margin
+        self.gui.screen.blit(block, rect)
+
+        block = self.gui.font.render(
+            f"Time Remaining {self.simulation.iter - Time.now} / {self.simulation.iter}",
+            True,
+            self.order_book_color,
+        )
+        rect = block.get_rect()
+        rect.right = x + w - self.gui.margin
         rect.bottom = y + h - self.gui.margin
         self.gui.screen.blit(block, rect)
 

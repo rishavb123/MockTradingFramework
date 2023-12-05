@@ -44,7 +44,7 @@ class Order(SimulationObject):
         return self.id
 
     def update(self) -> None:
-        if self.__frames_to_expire is None:
+        if self.__frames_to_expire is not None:
             self.__frames_to_expire -= 1
             if self.__frames_to_expire <= 0:
                 self.__expired = True
@@ -407,6 +407,8 @@ class Agent(SimulationObject):
 
     def update(self) -> None:
         self.open_orders = [order for order in self.open_orders if not order.voided()]
+        for order in self.open_orders:
+            order.update()
 
     @property
     def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:
@@ -547,6 +549,15 @@ class Exchange(SimulationObject):
             )
         return s + "\n\n"
     
+    def payout_for_holdings(self):
+        for symbol in self.__products:
+            product = self.__products[symbol]
+            payout = product.payout()
+            for agent_id in self.__accounts:
+                product_holding = self.__accounts[agent_id].get_holding(symbol)
+                self.__accounts[agent_id].set_holding(symbol, 0)
+                self.__accounts[agent_id].update_holding(symbol, product_holding * payout)
+    
     @property
     def open(self) -> bool:
         return self.simulation.started and not self.simulation.finished
@@ -565,7 +576,7 @@ class Exchange(SimulationObject):
 
     @property
     def symbols(self) -> List[str]:
-        return [product.symbol for product in self.__products.values()]
+        return list(self.__products)
 
     def trades_symbol(self, symbol) -> bool:
         return symbol in self.__products

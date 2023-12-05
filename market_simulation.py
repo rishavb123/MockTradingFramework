@@ -17,12 +17,14 @@ class MarketSimulation(Simulation):
         iter: int = 100000,
         lock: Union[threading.Lock, None] = None,
         display_to_console: bool = False,
+        payout_on_finish: bool = True,
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
         self.exchanges = exchanges
         self.agents = agents
         self.display_to_console = display_to_console
+        self.payout_on_finish = payout_on_finish
         for exchange in exchanges:
             for agent in agents:
                 exchange.register_agent(agent)
@@ -37,6 +39,12 @@ class MarketSimulation(Simulation):
         if self.display_to_console:
             for exchange in self.exchanges:
                 print(exchange.display_str(viewer=self.agents[1]))
+
+    def on_finish(self) -> None:
+        super().on_finish()
+        if self.payout_on_finish:
+            for exchange in self.exchanges:
+                exchange.payout_for_holdings()
 
 
 def main() -> None:
