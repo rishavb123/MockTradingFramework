@@ -1,1 +1,1 @@
-@python -m mocks.%1
+@python -m mocks.%1.main

@@ -1,43 +1,6 @@
-import numpy as np
+from trading_objects import Agent, Exchange, Event
 
-from trading_objects import Agent, Exchange, Product, Event
-from market_simulation import MarketSimulation
-from agents import ManualAgent
-
-
-def generate_fact(thresh=0.5):
-    return 2 * (np.random.random() < thresh) - 1
-
-
-MAX_PAYOUT = 100
-
-
-def fact_to_payout(fact):
-    return MAX_PAYOUT * (fact + 1) // 2
-
-
-SYMBOLS = ["A", "B"]
-TICK_SIZE = 1
-ITER = 300
-DT = 0.1
-
-FACT = generate_fact()
-PAYOUT = fact_to_payout(FACT)
-
-NUM_RETAIL_TRADERS = 20
-RETAIL_PAYOUT_PRIOR_STRENGTH = 0.1
-RETAIL_MIN_CONFIDENCE = 0.5
-RETAIL_SIZING_RANGE = (1, 6)
-RETAIL_ORDER_UPDATE_FREQ = 0.1
-
-
-class PairedFlipProduct(Product):
-    def __init__(self, symbol: str) -> None:
-        super().__init__(symbol)
-
-    def payout(self) -> None:
-        return PAYOUT
-
+from .config import *
 
 class HedgeFund(Agent):
     def __init__(self) -> None:
@@ -139,33 +102,3 @@ class RetailTrader(Agent):
                 self.ask(99, self.sizing, self.symbol, frames_to_expire=100)
 
         return super().update()
-
-
-def main() -> None:
-    products = [PairedFlipProduct(symbol) for symbol in SYMBOLS]
-
-    agents = [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)]
-    manual_agent = ManualAgent()
-
-    sim = MarketSimulation(
-        exchanges=Exchange(
-            tick_size=TICK_SIZE,
-        ),
-        agents=[
-            *agents,
-            manual_agent,
-        ],
-        products=products,
-        display_to_console=False,
-        dt=DT,
-        iter=ITER,
-        save_results_path="results/paired_flip_payout",
-    )
-    sim.start()
-
-    sim.connect_display(manual_agent.gui)
-    manual_agent.gui.run()
-
-
-if __name__ == "__main__":
-    main()
