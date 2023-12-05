@@ -2,7 +2,7 @@ import numpy as np
 
 from trading_objects import Agent, Exchange, Product, Event
 from market_simulation import MarketSimulation
-from agents import SingleExchangeManualAgent
+from agents import ManualAgent
 
 
 def generate_fact(thresh=0.5):
@@ -18,7 +18,7 @@ def fact_to_payout(fact):
 
 SYMBOLS = ["A", "B"]
 TICK_SIZE = 1
-ITER = 1200
+ITER = 300
 DT = 0.1
 
 FACT = generate_fact()
@@ -95,7 +95,6 @@ class RetailTrader(Agent):
         asks = order_books[self.symbol].asks
 
         if len(bids) > 0 and len(asks) > 0:
-
             bid_order = bids[-1]
             ask_order = asks[-1]
 
@@ -112,7 +111,10 @@ class RetailTrader(Agent):
                         and bid_order.id not in self.open_orders
                     ):
                         self.bid(
-                            bid + TICK_SIZE, self.sizing, self.symbol, frames_to_expire=100
+                            bid + TICK_SIZE,
+                            self.sizing,
+                            self.symbol,
+                            frames_to_expire=100,
                         )
                 else:
                     if bid > self.expected_stock_value and ask - bid < 2 * TICK_SIZE:
@@ -124,8 +126,17 @@ class RetailTrader(Agent):
                     ):
                         self.cancel_all_open_orders()
                         self.ask(
-                            ask - TICK_SIZE, self.sizing, self.symbol, frames_to_expire=100
+                            ask - TICK_SIZE,
+                            self.sizing,
+                            self.symbol,
+                            frames_to_expire=100,
                         )
+
+        else:
+            if self.opinion > 0 and len(bids) == 0:
+                self.bid(1, self.sizing, self.symbol, frames_to_expire=100)
+            elif self.opinion < 0 and len(asks) == 0:
+                self.ask(99, self.sizing, self.symbol, frames_to_expire=100)
 
         return super().update()
 
@@ -134,7 +145,7 @@ def main() -> None:
     products = [PairedFlipProduct(symbol) for symbol in SYMBOLS]
 
     agents = [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)]
-    manual_agent = SingleExchangeManualAgent()
+    manual_agent = ManualAgent()
 
     sim = MarketSimulation(
         exchanges=Exchange(
@@ -148,6 +159,7 @@ def main() -> None:
         display_to_console=False,
         dt=DT,
         iter=ITER,
+        save_results_path="results/paired_flip_payout",
     )
     sim.start()
 
