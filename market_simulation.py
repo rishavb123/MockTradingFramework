@@ -94,9 +94,10 @@ class MarketSimulation(Simulation):
             plt.bar(
                 cls_names,
                 cash_means_by_cls,
+                color=[("red" if c < 0 else "green") for c in cash_means_by_cls],
             )
             plt.errorbar(
-                cls_names, cash_means_by_cls, yerr=cash_stds_by_cls, fmt="o", c="red"
+                cls_names, cash_means_by_cls, yerr=cash_stds_by_cls, fmt="o", c="blue"
             )
             plt.xlabel("Agent Class")
             plt.ylabel("PNL")
@@ -109,6 +110,7 @@ class MarketSimulation(Simulation):
 
             with open(f"{self.save_results_path}/info.txt", "w") as f:
                 f.write(self.save_run_info())
+
 
 def main() -> None:
     symbols = ["AAAA", "BBBB", "CCCC"]
