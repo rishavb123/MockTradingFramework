@@ -25,10 +25,10 @@ class MarketSimulation(Simulation):
         self.display_to_console = display_to_console
         self.payout_on_finish = payout_on_finish
         for exchange in exchanges:
-            for agent in agents:
-                exchange.register_agent(agent)
             for product in products:
                 exchange.register_product(product)
+            for agent in agents:
+                exchange.register_agent(agent)
 
         simulation_objs = exchanges + agents
         super().__init__(dt, iter, lock, simulation_objs)

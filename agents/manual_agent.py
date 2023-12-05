@@ -2,7 +2,7 @@ from typing import Callable, Tuple
 import pygame
 
 from simulation import Time
-from trading_objects import Agent, Order
+from trading_objects import Agent, Exchange, Order, Event
 from command_display import CommandDisplay, Command, Argument
 
 
@@ -14,6 +14,9 @@ class SingleExchangeManualAgent(Agent):
         selected_book_color: Tuple[int, int, int] = (255, 0, 255),
         order_column_width: int = 10,
         order_column_margin_len: int = 0,
+        max_events_stored: int = 100,
+        event_column_width: int = 10,
+        events_color: Tuple[int, int, int] = (0, 255, 255),
     ) -> None:
         super().__init__()
         self.num_orders_to_show = num_orders_to_show
@@ -73,16 +76,113 @@ class SingleExchangeManualAgent(Agent):
                     ],
                     short_name="ss",
                 ),
+                Command(
+                    self.update_event_symbols,
+                    name="events_set_symbol",
+                    args_definitions=[Argument(str, "all"), 0],
+                    short_name="ess",
+                ),
+                Command(
+                    self.update_event_symbols,
+                    name="events_add_symbol",
+                    args_definitions=[Argument(str, "all"), 1],
+                    short_name="eas",
+                ),
+                Command(
+                    self.update_event_symbols,
+                    name="event_remove_symbol",
+                    args_definitions=[Argument(str, "all"), 2],
+                    short_name="ers",
+                ),
+                Command(
+                    self.update_event_types,
+                    name="events_set_type",
+                    args_definitions=[Argument(str, "all"), 0],
+                    short_name="est",
+                ),
+                Command(
+                    self.update_event_types,
+                    name="events_add_type",
+                    args_definitions=[Argument(str, "all"), 1],
+                    short_name="eat",
+                ),
+                Command(
+                    self.update_event_types,
+                    name="event_remove_type",
+                    args_definitions=[Argument(str, "all"), 2],
+                    short_name="ert",
+                ),
             ],
             macros={},
             draw_fn_map={
                 "market": self.visualize_market,
+                "events": self.visualize_events,
                 "holdings": self.visualize_holdings,
             },
             handle_event_fn=self.handle_event,
             font_size=12,
             command_font_size=16,
         )
+        self.max_events_stored = max_events_stored
+        self.event_column_width = event_column_width
+        self.events_color = events_color
+
+    def register_exchange(self, exchange: Exchange) -> None:
+        super().register_exchange(exchange)
+
+        self.events = []
+        self.event_types_map = {
+            "trades": Event.TRADE,
+            "bids": Event.BID,
+            "asks": Event.ASK,
+        }
+        self.event_type_reverse_map = {v: k for k, v in self.event_types_map.items()}
+        self.allowed_event_types = set(self.event_types_map.values())
+        self.allowed_symbols = set(exchange.symbols)
+
+        exchange.subscribe(self, self.filter_events, self.process_event)
+
+    def filter_events(self, _event: Event) -> bool:
+        return True
+
+    def process_event(self, event: Event) -> None:
+        self.events.append(event)
+        if len(self.events) > 1.5 * self.max_events_stored:
+            self.events = self.events[-self.max_events_stored :]
+
+    def update_event_symbols(self, symbol: str, operation: int) -> None:
+        symbol = symbol.upper()
+        if symbol != "ALL":
+            if operation == 0:
+                self.allowed_symbols = set([symbol])
+            elif operation == 1:
+                self.allowed_symbols.add(symbol)
+            elif operation == 2:
+                self.allowed_symbols.remove(symbol)
+        else:
+            if operation == 0:
+                self.allowed_symbols = set(self.exchange.symbols)
+            elif operation == 1:
+                self.allowed_symbols = set(self.exchange.symbols)
+            elif operation == 2:
+                self.allowed_symbols = set()
+
+    def update_event_types(self, event_type_str: str, operation: int) -> None:
+        event_type = self.event_types_map[event_type_str.lower()]
+        if event_type != "all":
+            if operation == 0:
+                self.allowed_event_types = set([event_type])
+            elif operation == 1:
+                self.allowed_event_types.add(event_type)
+            elif operation == 2:
+                self.allowed_event_types.remove(event_type)
+        else:
+            if operation == 0:
+                self.allowed_symbols = set(self.event_types_map.values())
+            elif operation == 1:
+                self.allowed_symbols = set(self.event_types_map.values())
+            elif operation == 2:
+                self.allowed_symbols = set()
 
     def select_symbol(self, symbol):
         symbols = self.exchange.symbols
@@ -104,7 +204,12 @@ class SingleExchangeManualAgent(Agent):
         def g(
             *args,
         ):
-            order_id = f(*args[:-1], symbol=self.cur_symbol, exchange_name=None, frames_to_expire=args[-1])
+            order_id = f(
+                *args[:-1],
+                symbol=self.cur_symbol,
+                exchange_name=None,
+                frames_to_expire=args[-1],
+            )
             if order_id is None:
                 return f"{f.__name__.title()} failed."
             else:
@@ -119,7 +224,7 @@ class SingleExchangeManualAgent(Agent):
             f"{order_info.price     :^{self.order_column_width}}{self.order_column_margin}"
             f"{order_info.size      :>{self.order_column_width}}{self.order_column_margin}"
         )
-    
+
     def visualize_market_status(self, x: int, y: int, w: int, h: int) -> None:
         market_open = self.exchange.open
         market_paused = self.simulation.paused
@@ -251,11 +356,29 @@ class SingleExchangeManualAgent(Agent):
             if cur_x + show.x_incr > x + w:
                 cur_x = x
                 starting_y = show.bottom_y + self.gui.margin
-    
+
+        self.visualize_market_status(x, y, w, h)
+
+    def visualize_events(self, x: int, y: int, w: int, h: int) -> None:
+        def to_line(symbol, price, size, event_type):
+            symbol = symbol.upper()
+            event_type_str = self.event_type_reverse_map[event_type][:-1].upper()
+            return f"{symbol:<{self.event_column_width}}{price:<{self.event_column_width}}{size:<{self.event_column_width}}{event_type_str:<{self.event_column_width}}"
+
+        lines = [
+            f"{'Symbol':<{self.event_column_width}}{'Price':<{self.event_column_width}}{'Size':<{self.event_column_width}}{'Event Type':<{self.event_column_width}}"
+        ] + list(reversed([
+            to_line(event.symbol, event.price, event.size, event.event_type)
+            for event in self.events
+            if event.symbol in self.allowed_symbols
+            and event.event_type in self.allowed_event_types
+        ]))
+
+        self.gui.wrap_text(lines, x, y, w, h, self.events_color)
+
         self.visualize_market_status(x, y, w, h)
 
     def visualize_holdings(self, x: int, y: int, w: int, h: int) -> None:
-        
         holdings = self.exchange.get_account_holdings(self)
 
         def show_holding(symbol):
@@ -282,7 +405,12 @@ class SingleExchangeManualAgent(Agent):
         pygame.draw.rect(
             self.gui.screen,
             self.order_book_color,
-            (x, y, show_holding.x_incr + 2 * self.gui.margin, show_holding.cur_y - y + self.gui.margin),
+            (
+                x,
+                y,
+                show_holding.x_incr + 2 * self.gui.margin,
+                show_holding.cur_y - y + self.gui.margin,
+            ),
             width=1,
         )
 

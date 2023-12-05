@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, List, Dict, Tuple
+from typing import Union, List, Dict, Tuple, Callable
 from collections import namedtuple
 
 from util import prefix_lines
@@ -471,6 +471,18 @@ class Product(SimulationObject):
         return 0
 
 
+class Event:
+    BID = 0
+    ASK = 1
+    TRADE = 2
+
+    def __init__(self, symbol: str, event_type: int, price: float, size: int) -> None:
+        self.symbol = symbol
+        self.event_type = event_type
+        self.price = price
+        self.size = size
+
+
 class Exchange(SimulationObject):
     def __init__(
         self,
@@ -491,11 +503,19 @@ class Exchange(SimulationObject):
 
         if isinstance(products, Product):
             products = [products]
+
         [self.register_product(product) for product in products]
         [self.register_agent(agent) for agent in agents]
 
         self.__tick_size = tick_size
         self.__order_fee = order_fee
+
+        self.__subscribed_callbacks = {}
+
+    def __on_event(self, event: Event) -> None:
+        for filter_f, callback in self.__subscribed_callbacks.values():
+            if filter_f(event):
+                callback(event)
 
     def get_account_holdings(self, agent):
         return {
@@ -504,6 +524,14 @@ class Exchange(SimulationObject):
         }
 
     def place_order(self, order: Order) -> None:
+        self.__on_event(
+            Event(
+                order.symbol,
+                Event.BID if order.dir == Order.BUY_DIR else Event.ASK,
+                order.price,
+                order.size,
+            )
+        )
         self.__accounts[order.sender.global_id].update_holding(
             Account.CASH_SYM, -self.order_fee
         )
@@ -512,6 +540,7 @@ class Exchange(SimulationObject):
     def execute_trade(
         self, symbol: str, price: float, size: int, buyer: Agent, seller: Agent
     ) -> None:
+        self.__on_event(Event(symbol, Event.TRADE, price, size))
         self.__products[symbol.upper()].record_trade(price, size, buyer, seller)
         self.__accounts[buyer.global_id].update_holding(Account.CASH_SYM, -price * size)
         self.__accounts[buyer.global_id].update_holding(symbol, size)
@@ -534,6 +563,12 @@ class Exchange(SimulationObject):
             return True
         return False
 
+    def subscribe(self, agent: Agent, filter_f: Callable[[Event], bool], callback: Callable[[Event], None]) -> None:
+        self.__subscribed_callbacks[agent.global_id] = (filter_f, callback)
+
+    def unsubscribe(self, agent: Agent) -> None:
+        del self.__subscribed_callbacks[agent.global_id]
+
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:
         return {
             symbol: self.__order_books[symbol].public_info() for symbol in self.symbols
@@ -547,7 +582,7 @@ class Exchange(SimulationObject):
                 self.__order_books[symbol].display_str(viewer=viewer, k=k), "\t\t"
             )
         return s + "\n\n"
-    
+
     def payout_for_holdings(self):
         for symbol in self.__products:
             product = self.__products[symbol]
@@ -555,8 +590,10 @@ class Exchange(SimulationObject):
             for agent_id in self.__accounts:
                 product_holding = self.__accounts[agent_id].get_holding(symbol)
                 self.__accounts[agent_id].set_holding(symbol, 0)
-                self.__accounts[agent_id].update_holding(Account.CASH_SYM, product_holding * payout)
-    
+                self.__accounts[agent_id].update_holding(
+                    Account.CASH_SYM, product_holding * payout
+                )
+
     @property
     def open(self) -> bool:
         return self.simulation.started and not self.simulation.finished
