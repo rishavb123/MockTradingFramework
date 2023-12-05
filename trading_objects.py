@@ -608,6 +608,10 @@ class Exchange(SimulationObject):
                 )
 
     @property
+    def time_remaining(self) -> int:
+        return self.simulation.iter - Time.now
+
+    @property
     def open(self) -> bool:
         return self.simulation.started and not self.simulation.finished
 

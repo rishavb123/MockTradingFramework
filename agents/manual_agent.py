@@ -276,7 +276,7 @@ class ManualAgent(Agent):
         self.gui.screen.blit(block, rect)
 
         block = self.gui.font.render(
-            f"Time Remaining {self.simulation.iter - Time.now} / {self.simulation.iter}",
+            f"Time Remaining {self.exchange.time_remaining} / {self.simulation.iter}",
             True,
             self.order_book_color,
         )
