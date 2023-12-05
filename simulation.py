@@ -3,6 +3,7 @@ from typing import Union, Self, List
 
 import time
 import threading
+import pygame
 
 from command_display import CommandDisplay, Command
 
@@ -175,3 +176,4 @@ class Simulation(threading.Thread):
             Command(f=self.kill, short_name="k"),
             Command(f=quit, short_name="q"),
         )
+        c.add_macro(pygame.K_SPACE, "p")

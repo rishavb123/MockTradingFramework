@@ -76,6 +76,7 @@ class SingleExchangeManualAgent(Agent):
                     short_name="ss",
                 ),
             ],
+            macros={},
             draw_fn_map={
                 "market": self.visualize_market,
                 "holdings": self.visualize_holdings,
@@ -105,7 +106,6 @@ class SingleExchangeManualAgent(Agent):
         def g(
             *args,
         ):
-            print("frames to expire:", args[-1])
             order_id = f(*args[:-1], symbol=self.cur_symbol, exchange_name=None, frames_to_expire=args[-1])
             if order_id is None:
                 return f"{f.__name__.title()} failed."
