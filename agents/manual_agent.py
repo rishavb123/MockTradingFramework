@@ -140,10 +140,7 @@ class SingleExchangeManualAgent(Agent):
         self.allowed_event_types = set(self.event_types_map.values())
         self.allowed_symbols = set(exchange.symbols)
 
-        exchange.subscribe(self, self.filter_events, self.process_event)
-
-    def filter_events(self, _event: Event) -> bool:
-        return True
+        exchange.subscribe(self, self.process_event)
 
     def process_event(self, event: Event) -> None:
         self.events.append(event)

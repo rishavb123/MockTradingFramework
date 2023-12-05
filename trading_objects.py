@@ -476,11 +476,17 @@ class Event:
     ASK = 1
     TRADE = 2
 
-    def __init__(self, symbol: str, event_type: int, price: float, size: int) -> None:
+    def __init__(
+        self, symbol: str, event_type: int, price: float, size: int, id: int
+    ) -> None:
         self.symbol = symbol
         self.event_type = event_type
         self.price = price
         self.size = size
+        if event_type == Event.TRADE:
+            self.order_id = None
+        else:
+            self.order_id = id
 
 
 class Exchange(SimulationObject):
@@ -513,9 +519,8 @@ class Exchange(SimulationObject):
         self.__subscribed_callbacks = {}
 
     def __on_event(self, event: Event) -> None:
-        for filter_f, callback in self.__subscribed_callbacks.values():
-            if filter_f(event):
-                callback(event)
+        for callback in self.__subscribed_callbacks.values():
+            callback(event)
 
     def get_account_holdings(self, agent):
         return {
@@ -530,6 +535,7 @@ class Exchange(SimulationObject):
                 Event.BID if order.dir == Order.BUY_DIR else Event.ASK,
                 order.price,
                 order.size,
+                order.id,
             )
         )
         self.__accounts[order.sender.global_id].update_holding(
@@ -540,7 +546,7 @@ class Exchange(SimulationObject):
     def execute_trade(
         self, symbol: str, price: float, size: int, buyer: Agent, seller: Agent
     ) -> None:
-        self.__on_event(Event(symbol, Event.TRADE, price, size))
+        self.__on_event(Event(symbol, Event.TRADE, price, size, None))
         self.__products[symbol.upper()].record_trade(price, size, buyer, seller)
         self.__accounts[buyer.global_id].update_holding(Account.CASH_SYM, -price * size)
         self.__accounts[buyer.global_id].update_holding(symbol, size)
@@ -563,8 +569,8 @@ class Exchange(SimulationObject):
             return True
         return False
 
-    def subscribe(self, agent: Agent, filter_f: Callable[[Event], bool], callback: Callable[[Event], None]) -> None:
-        self.__subscribed_callbacks[agent.global_id] = (filter_f, callback)
+    def subscribe(self, agent: Agent, callback: Callable[[Event], None]) -> None:
+        self.__subscribed_callbacks[agent.global_id] = callback
 
     def unsubscribe(self, agent: Agent) -> None:
         del self.__subscribed_callbacks[agent.global_id]
