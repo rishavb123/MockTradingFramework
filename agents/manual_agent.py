@@ -63,7 +63,6 @@ class SingleExchangeManualAgent(Agent):
                     self.cancel,
                     args_definitions=[
                         Argument(int, 0),
-                        Argument(int, None),
                     ],
                     short_name="c",
                 ),
@@ -71,7 +70,6 @@ class SingleExchangeManualAgent(Agent):
                     self.select_symbol,
                     args_definitions=[
                         Argument(str, None),
-                        Argument(int, None),
                     ],
                     short_name="ss",
                 ),

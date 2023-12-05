@@ -177,3 +177,5 @@ class Simulation(threading.Thread):
             Command(f=quit, short_name="q"),
         )
         c.add_macro(pygame.K_SPACE, "p")
+        c.add_macro(pygame.K_RETURN, "m")
+        c.add_macro(pygame.K_KP_ENTER, "m")
