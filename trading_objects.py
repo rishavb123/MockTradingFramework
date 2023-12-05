@@ -278,7 +278,7 @@ class Agent(SimulationObject):
     def __init__(self) -> None:
         super().__init__()
         self.exchanges = {}
-        self.open_orders = []
+        self.open_orders = {}
 
     def register_exchange(self, exchange: Exchange) -> None:
         self.exchanges[exchange.name] = exchange
@@ -316,7 +316,7 @@ class Agent(SimulationObject):
             frames_to_expire=frames_to_expire,
         )
         self.add_dependent(order)
-        self.open_orders.append(order)
+        self.open_orders[order.id] = order
         return order.place()
 
     def market_order(
@@ -407,7 +407,11 @@ class Agent(SimulationObject):
             return order_id
 
     def update(self) -> None:
-        self.open_orders = [order for order in self.open_orders if not order.voided()]
+        self.open_orders = {
+            order_id: order
+            for order_id, order in self.open_orders.items()
+            if not order.voided()
+        }
 
     @property
     def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:

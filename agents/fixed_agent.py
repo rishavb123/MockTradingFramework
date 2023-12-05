@@ -23,7 +23,7 @@ class SingleProductFixedAgent(Agent):
         have_bid = False
         have_ask = False
 
-        for order in self.open_orders:
+        for order in self.open_orders.values():
             if order.dir == Order.BUY_DIR:
                 have_bid = True
             elif order.dir == Order.SELL_DIR:

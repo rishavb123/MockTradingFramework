@@ -258,7 +258,6 @@ class SingleExchangeManualAgent(Agent):
             self.select_symbol(self.cur_symbol)
 
         order_books = self.exchange.public_info()
-        my_open_orders = set([order.id for order in self.open_orders])
 
         cur_x = x
         starting_y = y
@@ -316,7 +315,7 @@ class SingleExchangeManualAgent(Agent):
                 else:
                     ask = asks[-i - 1]
                     s = self.order_string(ask)
-                    if ask.id in my_open_orders:
+                    if ask.id in self.open_orders:
                         show(
                             s,
                             c=(color[0] // 2, color[1] // 2, color[2] // 2),
@@ -332,7 +331,7 @@ class SingleExchangeManualAgent(Agent):
                 else:
                     bid = bids[-i - 1]
                     s = self.order_string(bid)
-                    if bid.id in my_open_orders:
+                    if bid.id in self.open_orders:
                         show(
                             s,
                             c=(color[0] // 2, color[1] // 2, color[2] // 2),
