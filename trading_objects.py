@@ -66,7 +66,7 @@ class Order(SimulationObject):
         self.__cancelled = True
 
     def public_info(self) -> Order.PublicInfo:
-        return Order.PublicInfo(self.id, self.__price, self.size)
+        return Order.PublicInfo(self.id, self.price, self.size)
 
     @property
     def symbol(self):
