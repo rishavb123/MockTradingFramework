@@ -315,6 +315,7 @@ class Agent(SimulationObject):
             exchange=exchange,
             frames_to_expire=frames_to_expire,
         )
+        self.add_dependent(order)
         self.open_orders.append(order)
         return order.place()
 
@@ -407,8 +408,6 @@ class Agent(SimulationObject):
 
     def update(self) -> None:
         self.open_orders = [order for order in self.open_orders if not order.voided()]
-        for order in self.open_orders:
-            order.update()
 
     @property
     def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:
