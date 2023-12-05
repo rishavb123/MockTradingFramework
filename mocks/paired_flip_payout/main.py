@@ -59,7 +59,9 @@ def main() -> None:
         iter=ITER,
         metrics_aggregator=price_aggregator,
         metrics_plots=plots,
-        save_results_path=f"results/{MOCK_NAME}_{int(time.time())}",
+        save_results_path=f"results/{MOCK_NAME}_{int(time.time())}"
+        if SAVE_RESULTS
+        else None,
         save_run_info=run_info,
     )
     sim.start()
