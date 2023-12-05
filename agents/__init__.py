@@ -1,2 +1,2 @@
 from .fixed_agent import SingleProductFixedAgent
-from .manual_agent import SingleExchangeManualAgent
+from .manual_agent import ManualAgent

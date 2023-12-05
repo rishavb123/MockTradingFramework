@@ -1,4 +1,6 @@
 from typing import Callable, Tuple
+import numpy as np
+import matplotlib.pyplot as plt
 import pygame
 
 from simulation import Time
@@ -6,7 +8,9 @@ from trading_objects import Agent, Exchange, Order, Event
 from command_display import CommandDisplay, Command, Argument
 
 
-class SingleExchangeManualAgent(Agent):
+class ManualAgent(Agent):
+    # Note this only works for a single exchange for now
+
     def __init__(
         self,
         num_orders_to_show=5,
@@ -363,12 +367,16 @@ class SingleExchangeManualAgent(Agent):
 
         lines = [
             f"{'Symbol':<{self.event_column_width}}{'Price':<{self.event_column_width}}{'Size':<{self.event_column_width}}{'Event Type':<{self.event_column_width}}"
-        ] + list(reversed([
-            to_line(event.symbol, event.price, event.size, event.event_type)
-            for event in self.events
-            if event.symbol in self.allowed_symbols
-            and event.event_type in self.allowed_event_types
-        ]))
+        ] + list(
+            reversed(
+                [
+                    to_line(event.symbol, event.price, event.size, event.event_type)
+                    for event in self.events
+                    if event.symbol in self.allowed_symbols
+                    and event.event_type in self.allowed_event_types
+                ]
+            )
+        )
 
         self.gui.wrap_text(lines, x, y, w, h, self.events_color)
 
