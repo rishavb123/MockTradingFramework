@@ -1,32 +1,9 @@
+from typing import Union
 import numpy as np
 
 from trading_objects import Agent, Exchange, Event
 
 from .config import *
-
-class HedgeFund(Agent):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.last_trades = {}
-        self.opinion = FACT
-
-    def register_exchange(self, exchange: Exchange) -> None:
-        super().register_exchange(exchange)
-        exchange.subscribe(self, self.process_event)
-
-    def process_event(self, event: Event) -> None:
-        if event.event_type == Event.TRADE:
-            self.last_trades[event.symbol] = event.price
-
-    def update(self) -> None:
-        order_books = self.exchange.public_info()
-
-        for symbol in order_books:
-            bids = order_books[symbol].bids
-            asks = order_books[symbol].asks
-
-        return super().update()
 
 
 class RetailTrader(Agent):
@@ -111,5 +88,77 @@ class RetailTrader(Agent):
                 self.bid(1, self.sizing, self.symbol, frames_to_expire=100)
             elif self.opinion < 0 and len(asks) == 0:
                 self.ask(99, self.sizing, self.symbol, frames_to_expire=100)
+
+        return super().update()
+
+
+class HedgeFund(Agent):
+    def __init__(self) -> None:
+        super().__init__()
+        self.opinion = FACT
+        self.confidence = 1
+        self.payout = PAYOUT
+        self.sizing = 100
+
+        self.cur_spread = None
+
+    def register_exchange(self, exchange: Exchange) -> None:
+        super().register_exchange(exchange)
+        exchange.subscribe(self, self.process_event)
+
+    def process_event(self, event: Event) -> None:
+        if event.event_type == Event.TRADE:
+            return
+        if event.order_id in self.open_orders:
+            return
+
+        if self.opinion == 1:
+            if event.event_type == Event.BID:
+                self.bid(
+                    price=event.price + 2 * TICK_SIZE,
+                    size=2 * event.size,
+                    symbol=event.symbol,
+                    frames_to_expire=100,
+                )
+            if (
+                event.event_type == Event.ASK
+                and self.cur_spread is not None
+                and self.cur_spread < 4 * TICK_SIZE
+            ):
+                self.bid(price=event.price, size=event.size, symbol=event.symbol)
+        else:
+            if event.event_type == Event.ASK:
+                self.ask(
+                    price=event.price - 2 * TICK_SIZE,
+                    size=2 * event.size,
+                    symbol=event.symbol,
+                    frames_to_expire=100,
+                )
+            if (
+                event.event_type == Event.BID
+                and self.cur_spread is not None
+                and self.cur_spread < 4 * TICK_SIZE
+            ):
+                self.ask(price=event.price, size=event.size, symbol=event.symbol)
+
+    def update(self) -> None:
+        order_books = self.exchange.public_info()
+
+        for symbol in order_books:
+            bids = order_books[symbol].bids
+            asks = order_books[symbol].asks
+
+            if len(bids) > 0 and len(asks) > 0:
+                self.cur_spread = asks[-1].price - bids[-1].price
+
+            if self.exchange.time_remaining < 20:
+                if self.opinion == 1:
+                    self.bid(
+                        price=99, size=self.sizing, symbol=symbol, frames_to_expire=2
+                    )
+                else:
+                    self.ask(
+                        price=1, size=self.sizing, symbol=symbol, frames_to_expire=2
+                    )
 
         return super().update()
