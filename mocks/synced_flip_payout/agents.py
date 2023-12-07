@@ -20,7 +20,7 @@ class RetailInvestor(Agent):
             )
         )
         self.sizing = np.random.randint(*RETAIL_SIZING_RANGE)
-        self.frames_to_expire = 100
+        self.resting_order_expire_time = 100
 
     def update(self) -> None:
         order_books = self.exchange.public_info()
@@ -51,7 +51,7 @@ class RetailInvestor(Agent):
                 price=cheapest_investment[1],
                 size=self.sizing,
                 symbol=cheapest_investment[0],
-                frames_to_expire=self.frames_to_expire,
+                frames_to_expire=self.resting_order_expire_time,
             )
 
 
@@ -154,6 +154,8 @@ class HedgeFund(Agent):
         self.take_all_orders_at = 20
         self.resting_order_expire_time = 100
 
+        self.retail_mock_sizing = np.random.randint(*RETAIL_SIZING_RANGE)
+
         self.cur_spread = {}
 
     def register_exchange(self, exchange: Exchange) -> None:
@@ -168,30 +170,40 @@ class HedgeFund(Agent):
 
         if self.opinion == 1:
             if event.event_type == Event.BID:
-                self.bid(
-                    price=event.price + self.penny_by,
-                    size=2 * event.size,
-                    symbol=event.symbol,
-                    frames_to_expire=self.resting_order_expire_time,
-                )
+                if (
+                    event.symbol not in self.cur_spread
+                    or event.price < self.cur_spread[event.symbol][1]
+                ):
+                    self.bid(
+                        price=event.price + self.penny_by,
+                        size=2 * event.size,
+                        symbol=event.symbol,
+                        frames_to_expire=self.resting_order_expire_time,
+                    )
             if (
                 event.event_type == Event.ASK
                 and event.symbol in self.cur_spread
-                and self.cur_spread[event.symbol] < self.spread_to_cross
+                and self.cur_spread[event.symbol][1] - self.cur_spread[event.symbol][0]
+                < self.spread_to_cross
             ):
                 self.bid(price=event.price, size=event.size, symbol=event.symbol)
         else:
             if event.event_type == Event.ASK:
-                self.ask(
-                    price=event.price - self.penny_by,
-                    size=2 * event.size,
-                    symbol=event.symbol,
-                    frames_to_expire=self.resting_order_expire_time,
-                )
+                if (
+                    event.symbol not in self.cur_spread
+                    or event.price > self.cur_spread[event.symbol][0]
+                ):
+                    self.ask(
+                        price=event.price - self.penny_by,
+                        size=2 * event.size,
+                        symbol=event.symbol,
+                        frames_to_expire=self.resting_order_expire_time,
+                    )
             if (
                 event.event_type == Event.BID
                 and event.symbol in self.cur_spread
-                and self.cur_spread[event.symbol] < self.spread_to_cross
+                and self.cur_spread[event.symbol][1] - self.cur_spread[event.symbol][0]
+                < self.spread_to_cross
             ):
                 self.ask(price=event.price, size=event.size, symbol=event.symbol)
 
@@ -203,7 +215,7 @@ class HedgeFund(Agent):
             asks = order_books[symbol].asks
 
             if len(bids) > 0 and len(asks) > 0:
-                self.cur_spread[symbol] = asks[-1].price - bids[-1].price
+                self.cur_spread[symbol] = bids[-1].price, asks[-1].price
 
             if self.exchange.time_remaining < self.take_all_orders_at:
                 if self.opinion == 1:
@@ -220,6 +232,35 @@ class HedgeFund(Agent):
                         symbol=symbol,
                         frames_to_expire=2,
                     )
+
+        cheapest_investment = None
+        for symbol in order_books:
+            if self.opinion == 1:
+                asks = order_books[symbol].asks
+                if len(asks) > 0 and (
+                    cheapest_investment is None
+                    or asks[-1].price < cheapest_investment[1]
+                ):
+                    cheapest_investment = symbol, asks[-1].price
+            else:
+                bids = order_books[symbol].bids
+                if len(bids) > 0 and (
+                    cheapest_investment is None
+                    or bids[-1].price > cheapest_investment[1]
+                ):
+                    cheapest_investment = symbol, bids[-1].price
+
+        if (
+            cheapest_investment is not None
+            and np.random.random() < RETAIL_ORDER_UPDATE_FREQ
+        ):
+            self.limit_order(
+                dir=self.opinion,
+                price=cheapest_investment[1],
+                size=self.sizing,
+                symbol=cheapest_investment[0],
+                frames_to_expire=self.resting_order_expire_time,
+            )
 
         return super().update()
 
