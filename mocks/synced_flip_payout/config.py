@@ -15,6 +15,7 @@ SYMBOLS = ["A", "B"]
 TICK_SIZE = 1
 ITER = 1200
 DT = 0.1
+VOLUME_WINDOW_SIZE = 50
 
 FACT = generate_fact()
 PAYOUT = fact_to_payout(FACT)

@@ -92,7 +92,7 @@ class MarketSimulation(Simulation):
         cash_stds_by_cls = [np.std(cash_results_by_cls[c]) for c in agent_classes]
 
         if self.save_results_path:
-            plt.figure()
+            plt.figure(figsize=(15, 8))
             plt.bar(
                 agent_classes,
                 cash_means_by_cls,
@@ -129,10 +129,10 @@ class MarketSimulation(Simulation):
 
             if self.metrics_aggregator is not None:
                 self.metrics_aggregator.save_to_json(
-                    f"{self.save_results_path}/data/prices.json"
+                    f"{self.save_results_path}/data/metrics.json"
                 )
                 self.metrics_aggregator.save_to_csv(
-                    f"{self.save_results_path}/data/prices.csv"
+                    f"{self.save_results_path}/data/metrics.csv"
                 )
                 for plot in self.metrics_plots:
                     plot.plot(

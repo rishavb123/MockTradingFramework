@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 from metrics import MetricsAggregator, MetricsPlots
 from trading_objects import Exchange, Product
 import matplotlib.pyplot as plt
@@ -68,6 +68,7 @@ class PricePlot(MetricsPlots):
                 f"{symbol}_ask",
                 f"{symbol}_ask_size",
                 f"{symbol}_last_traded_price",
+                "time"
             ],
             self.price_plot,
         )
@@ -79,7 +80,7 @@ class PricePlot(MetricsPlots):
         ask_size = kwargs[f"{self.symbol}_ask_size"]
         last_traded_price = kwargs[f"{self.symbol}_last_traded_price"]
 
-        times = np.arange(len(bid))
+        times = kwargs["time"]
 
         mid = (bid + ask) / 2
         swmid = (bid * ask_size + ask * bid_size) / (bid_size + ask_size)

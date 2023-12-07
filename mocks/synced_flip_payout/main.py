@@ -3,7 +3,13 @@ import time
 from trading_objects import Exchange
 from market_simulation import MarketSimulation
 from agents import ManualAgent
-from metrics_aggregators.prices import PriceAggregator, PricePlot
+from metrics_aggregators import (
+    PriceAggregator,
+    PricePlot,
+    VolumeAggregator,
+    VolumePlot,
+    CombinedMetricsAggregator,
+)
 
 from .config import *
 from .agents import RetailInvestor, RetailTrader, HedgeFund, ArbAgent, MarketMaker
@@ -30,7 +36,9 @@ def main() -> None:
     )
 
     price_aggregator = PriceAggregator(exchange=exchange, products=products)
-    plots = [PricePlot(symbol=symbol) for symbol in SYMBOLS]
+    volume_aggregator = VolumeAggregator(products=products, window_size=VOLUME_WINDOW_SIZE)
+    combined_aggregator = CombinedMetricsAggregator(price_aggregator, volume_aggregator)
+    plots = [PricePlot(symbol=symbol) for symbol in SYMBOLS] + [VolumePlot(SYMBOLS)]
 
     def run_info():
         info = {}
@@ -39,6 +47,7 @@ def main() -> None:
         info["TICK_SIZE"] = TICK_SIZE
         info["ITER"] = ITER
         info["DT"] = DT
+        info["VOLUME_WINDOW_SIZE"] = VOLUME_WINDOW_SIZE
         info["FACT"] = FACT
         info["PAYOUT"] = PAYOUT
         info["MAX_PAYOUT"] = MAX_PAYOUT
@@ -60,7 +69,7 @@ def main() -> None:
         display_to_console=False,
         dt=DT,
         iter=ITER,
-        metrics_aggregator=price_aggregator,
+        metrics_aggregator=combined_aggregator,
         metrics_plots=plots,
         save_results_path=f"results/{MOCK_NAME}_{int(time.time())}"
         if SAVE_RESULTS
