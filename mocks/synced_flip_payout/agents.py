@@ -257,7 +257,7 @@ class HedgeFund(Agent):
             self.limit_order(
                 dir=self.opinion,
                 price=cheapest_investment[1],
-                size=self.sizing,
+                size=self.retail_mock_sizing,
                 symbol=cheapest_investment[0],
                 frames_to_expire=self.resting_order_expire_time,
             )
