@@ -31,12 +31,12 @@ class MetricsAggregator(SimulationObject):
             [none_to_nan(snapshot[metric_name]) for snapshot in self.metrics]
         )
 
-    def save_to_json(self, fname: str):
+    def save_to_json(self, fname: str) -> None:
         if len(self.metrics) > 0:
             with open(fname, "w") as f:
                 json.dump(self.metrics, f, ensure_ascii=False, indent=4)
 
-    def save_to_csv(self, fname: str):
+    def save_to_csv(self, fname: str) -> None:
         if len(self.metrics) > 0:
             with open(fname, "w", newline="") as f:
                 w = csv.DictWriter(f, self.metrics[0].keys())
