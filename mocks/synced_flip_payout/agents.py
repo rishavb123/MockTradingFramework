@@ -98,7 +98,12 @@ class HedgeFund(Agent):
         self.opinion = FACT
         self.confidence = 1
         self.payout = PAYOUT
+
         self.sizing = 100
+        self.spread_to_cross = 4 * TICK_SIZE
+        self.penny_by = 2 * TICK_SIZE
+        self.take_all_orders_at = 20
+        self.resting_order_expire_time = 100
 
         self.cur_spread = {}
 
@@ -115,29 +120,29 @@ class HedgeFund(Agent):
         if self.opinion == 1:
             if event.event_type == Event.BID:
                 self.bid(
-                    price=event.price + 2 * TICK_SIZE,
+                    price=event.price + self.penny_by,
                     size=2 * event.size,
                     symbol=event.symbol,
-                    frames_to_expire=100,
+                    frames_to_expire=self.resting_order_expire_time,
                 )
             if (
                 event.event_type == Event.ASK
                 and event.symbol in self.cur_spread
-                and self.cur_spread[event.symbol] < 8 * TICK_SIZE
+                and self.cur_spread[event.symbol] < self.spread_to_cross
             ):
                 self.bid(price=event.price, size=event.size, symbol=event.symbol)
         else:
             if event.event_type == Event.ASK:
                 self.ask(
-                    price=event.price - 2 * TICK_SIZE,
+                    price=event.price - self.penny_by,
                     size=2 * event.size,
                     symbol=event.symbol,
-                    frames_to_expire=100,
+                    frames_to_expire=self.resting_order_expire_time,
                 )
             if (
                 event.event_type == Event.BID
                 and event.symbol in self.cur_spread
-                and self.cur_spread[event.symbol] < 8 * TICK_SIZE
+                and self.cur_spread[event.symbol] < self.spread_to_cross
             ):
                 self.ask(price=event.price, size=event.size, symbol=event.symbol)
 
@@ -151,14 +156,14 @@ class HedgeFund(Agent):
             if len(bids) > 0 and len(asks) > 0:
                 self.cur_spread[symbol] = asks[-1].price - bids[-1].price
 
-            if self.exchange.time_remaining < 20:
+            if self.exchange.time_remaining < self.take_all_orders_at:
                 if self.opinion == 1:
                     self.bid(
-                        price=99, size=self.sizing, symbol=symbol, frames_to_expire=2
+                        price=MAX_PAYOUT - TICK_SIZE, size=self.sizing, symbol=symbol, frames_to_expire=2
                     )
                 else:
                     self.ask(
-                        price=1, size=self.sizing, symbol=symbol, frames_to_expire=2
+                        price=TICK_SIZE, size=self.sizing, symbol=symbol, frames_to_expire=2
                     )
 
         return super().update()
