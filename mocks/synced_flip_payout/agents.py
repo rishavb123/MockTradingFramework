@@ -190,20 +190,18 @@ class ArbAgent(Agent):
             lowest_ask_symbol = min(markets, key=lambda symbol: markets[symbol][2])
 
             if markets[highest_bid_symbol][0] > markets[lowest_ask_symbol][2]:
-                size = max(
+                size = min(
                     markets[highest_bid_symbol][1], markets[lowest_ask_symbol][3]
                 )
                 self.ask(
-                    price=markets[lowest_ask_symbol][2],
+                    price=markets[highest_bid_symbol][0] - 1,
                     size=size,
                     symbol=highest_bid_symbol,
-                    frames_to_expire=1
                 )
                 self.bid(
-                    price=markets[highest_bid_symbol][0],
+                    price=markets[lowest_ask_symbol][2] + 1,
                     size=size,
                     symbol=lowest_ask_symbol,
-                    frames_to_expire=1
                 )
 
         return super().update()
