@@ -26,5 +26,5 @@ RETAIL_SIZING_RANGE = (1, 6)
 RETAIL_ORDER_UPDATE_FREQ = 0.1
 RETAIL_TRADER_SYMBOL_RATIO = [0.65, 0.35]
 
-MOCK_NAME = "paired_flip_payout"
+MOCK_NAME = "synced_flip_payout"
 SAVE_RESULTS = True
