@@ -100,7 +100,7 @@ class HedgeFund(Agent):
         self.payout = PAYOUT
         self.sizing = 100
 
-        self.cur_spread = None
+        self.cur_spread = {}
 
     def register_exchange(self, exchange: Exchange) -> None:
         super().register_exchange(exchange)
@@ -122,8 +122,8 @@ class HedgeFund(Agent):
                 )
             if (
                 event.event_type == Event.ASK
-                and self.cur_spread is not None
-                and self.cur_spread < 4 * TICK_SIZE
+                and event.symbol in self.cur_spread
+                and self.cur_spread[event.symbol] < 8 * TICK_SIZE
             ):
                 self.bid(price=event.price, size=event.size, symbol=event.symbol)
         else:
@@ -136,8 +136,8 @@ class HedgeFund(Agent):
                 )
             if (
                 event.event_type == Event.BID
-                and self.cur_spread is not None
-                and self.cur_spread < 4 * TICK_SIZE
+                and event.symbol in self.cur_spread
+                and self.cur_spread[event.symbol] < 8 * TICK_SIZE
             ):
                 self.ask(price=event.price, size=event.size, symbol=event.symbol)
 
@@ -149,7 +149,7 @@ class HedgeFund(Agent):
             asks = order_books[symbol].asks
 
             if len(bids) > 0 and len(asks) > 0:
-                self.cur_spread = asks[-1].price - bids[-1].price
+                self.cur_spread[symbol] = asks[-1].price - bids[-1].price
 
             if self.exchange.time_remaining < 20:
                 if self.opinion == 1:
