@@ -301,7 +301,7 @@ class ManualAgent(Agent):
         )
         ask_str_header = (
             f"{'Id'   :<{self.order_column_width}}{self.order_column_margin}"
-            f"{'Bid'  :^{self.order_column_width}}{self.order_column_margin}"
+            f"{'Ask'  :^{self.order_column_width}}{self.order_column_margin}"
             f"{'Size' :>{self.order_column_width}}{self.order_column_margin}"
         )
 
