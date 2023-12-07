@@ -5,11 +5,12 @@ matplotlib.use("Agg")
 import os
 import shutil
 
-from typing import Union, List, Callable
+from typing import Union, List, Callable, Dict, Any
 
 import threading
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 from simulation import Simulation
 from trading_objects import Agent, Exchange, Product, Account
@@ -31,7 +32,7 @@ class MarketSimulation(Simulation):
         metrics_aggregator: Union[MetricsAggregator, None] = None,
         metrics_plots: List[MetricsPlots] = [],
         save_results_path: Union[str, None] = None,
-        save_run_info: Union[Callable[[None], str], None] = None,
+        save_run_info: Union[Callable[[None], Dict[str, Any]], None] = None,
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
@@ -81,35 +82,55 @@ class MarketSimulation(Simulation):
         for i in range(len(self.agents)):
             cash = cash_results[i]
             agent = self.agents[i]
-            if agent.__class__ not in cash_results_by_cls:
-                cash_results_by_cls[agent.__class__] = []
-            cash_results_by_cls[agent.__class__].append(cash)
+            if agent.__class__.__name__ not in cash_results_by_cls:
+                cash_results_by_cls[agent.__class__.__name__] = []
+            cash_results_by_cls[agent.__class__.__name__].append(cash)
         agent_classes = [c for c in cash_results_by_cls]
-        cls_names = [c.__name__ for c in agent_classes]
         cash_means_by_cls = [np.mean(cash_results_by_cls[c]) for c in agent_classes]
         cash_stds_by_cls = [np.std(cash_results_by_cls[c]) for c in agent_classes]
 
         if self.save_results_path:
             plt.figure()
             plt.bar(
-                cls_names,
+                agent_classes,
                 cash_means_by_cls,
                 color=[("red" if c < 0 else "green") for c in cash_means_by_cls],
             )
             plt.errorbar(
-                cls_names, cash_means_by_cls, yerr=cash_stds_by_cls, fmt="o", c="blue"
+                agent_classes,
+                cash_means_by_cls,
+                yerr=cash_stds_by_cls,
+                fmt="o",
+                c="blue",
             )
             plt.xlabel("Agent Class")
             plt.ylabel("PNL")
             plt.title("PNL by Agent Class")
             plt.savefig(f"{self.save_results_path}/pnl_by_agent_cls.png")
 
+            with open(f"{self.save_results_path}/agent_pnl.json", "w") as f:
+                json.dump(
+                    {
+                        agent_cls: {
+                            "mean": cash_mean,
+                            "std": cash_std,
+                            "results": cash_results_by_cls[agent_cls],
+                        }
+                        for agent_cls, cash_mean, cash_std in zip(
+                            agent_classes, cash_means_by_cls, cash_stds_by_cls
+                        )
+                    },
+                    f,
+                    ensure_ascii=False,
+                    indent=4,
+                )
+
             if self.metrics_aggregator is not None:
                 for plot in self.metrics_plots:
                     plot.plot(self.metrics_aggregator, self.save_results_path)
 
-            with open(f"{self.save_results_path}/info.txt", "w") as f:
-                f.write(self.save_run_info())
+            with open(f"{self.save_results_path}/info.json", "w") as f:
+                json.dump(self.save_run_info(), f, ensure_ascii=False, indent=4)
 
 
 def main() -> None:

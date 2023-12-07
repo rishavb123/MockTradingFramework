@@ -32,28 +32,24 @@ def main() -> None:
     plots = [PricePlot(symbol=symbol) for symbol in SYMBOLS]
 
     def run_info():
-        WIDTH = 30
-        s = ""
+        info = {}
 
-        def add(name, val):
-            return f"{name:<{WIDTH}}: {val}\n"
+        info["SYMBOLS"] = SYMBOLS
+        info["TICK_SIZE"] = TICK_SIZE
+        info["ITER"] = ITER
+        info["DT"] = DT
+        info["FACT"] = FACT
+        info["PAYOUT"] = PAYOUT
+        info["MAX_PAYOUT"] = MAX_PAYOUT
+        info["NUM_RETAIL_TRADERS"] = NUM_RETAIL_TRADERS
+        info["RETAIL_PAYOUT_PRIOR_STRENGTH"] = RETAIL_PAYOUT_PRIOR_STRENGTH
+        info["RETAIL_MIN_CONFIDENCE"] = RETAIL_MIN_CONFIDENCE
+        info["RETAIL_SIZING_RANGE"] = RETAIL_SIZING_RANGE
+        info["RETAIL_ORDER_UPDATE_FREQ"] = RETAIL_ORDER_UPDATE_FREQ
+        info["RETAIL_TRADER_SYMBOL_RATIO"] = RETAIL_TRADER_SYMBOL_RATIO
+        info["MOCK_NAME"] = MOCK_NAME
 
-        s += add("SYMBOLS", SYMBOLS)
-        s += add("TICK_SIZE", TICK_SIZE)
-        s += add("ITER", ITER)
-        s += add("DT", DT)
-        s += add("FACT", FACT)
-        s += add("PAYOUT", PAYOUT)
-        s += add("MAX_PAYOUT", MAX_PAYOUT)
-        s += add("NUM_RETAIL_TRADERS", NUM_RETAIL_TRADERS)
-        s += add("RETAIL_PAYOUT_PRIOR_STRENGTH", RETAIL_PAYOUT_PRIOR_STRENGTH)
-        s += add("RETAIL_MIN_CONFIDENCE", RETAIL_MIN_CONFIDENCE)
-        s += add("RETAIL_SIZING_RANGE", RETAIL_SIZING_RANGE)
-        s += add("RETAIL_ORDER_UPDATE_FREQ", RETAIL_ORDER_UPDATE_FREQ)
-        s += add("RETAIL_TRADER_SYMBOL_RATIO", RETAIL_TRADER_SYMBOL_RATIO)
-        s += add("MOCK_NAME", MOCK_NAME)
-
-        return s
+        return info
 
     sim = MarketSimulation(
         exchanges=exchange,
