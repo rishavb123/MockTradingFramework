@@ -35,7 +35,10 @@ class Order(SimulationObject):
         self.__price = price
         self.__size = size
         self.__exchange = exchange
-        self.__frames_to_expire = frames_to_expire + 1 # decremented on add
+        if frames_to_expire is not None:
+            self.__frames_to_expire = frames_to_expire + 1 # decremented on add
+        else:
+            self.__frames_to_expire = None
         self.__expired = frames_to_expire == 0
         self.__cancelled = False
 
