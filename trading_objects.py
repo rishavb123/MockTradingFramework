@@ -36,7 +36,7 @@ class Order(SimulationObject):
         self.__size = size
         self.__exchange = exchange
         if frames_to_expire is not None:
-            self.__frames_to_expire = frames_to_expire + 1 # decremented on add
+            self.__frames_to_expire = frames_to_expire + 1  # decremented on add
         else:
             self.__frames_to_expire = None
         self.__expired = frames_to_expire == 0
@@ -227,6 +227,10 @@ class OrderBook(SimulationObject):
         self.bids = [order for order in self.bids if not order.voided()]
         self.asks = [order for order in self.asks if not order.voided()]
 
+    def __remove_resting_market_orders(self):
+        self.bids = [order for order in self.bids if order.price < effective_inf]
+        self.asks = [order for order in self.asks if order.price > 0]
+
     def place_order(self, order: Order) -> None:
         self._orders_to_place.append(order)
 
@@ -238,15 +242,14 @@ class OrderBook(SimulationObject):
         self.__clean_orders()
         self.__match_orders()
         self.__clean_orders()
+        self.__remove_resting_market_orders()
         for order in self._orders_to_place:
             if not order.voided():
                 self.exchange.send_order_update(order)
         self._orders_to_place = []
         self._orders_to_cancel = []
 
-    def public_info(
-        self,
-    ) -> Tuple[List[Order.PublicInfo], List[Order.PublicInfo]]:
+    def public_info(self) -> Tuple[List[Order.PublicInfo], List[Order.PublicInfo]]:
         return OrderBook.PublicInfo(
             bids=[order.public_info() for order in self.bids],
             asks=[order.public_info() for order in self.asks],
