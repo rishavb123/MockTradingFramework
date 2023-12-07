@@ -6,6 +6,7 @@ matplotlib.use("Agg")
 from typing import List, Dict, Any, Callable
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 import json
 
 from simulation import SimulationObject, Time
@@ -25,11 +26,22 @@ class MetricsAggregator(SimulationObject):
     def get_metric(self, metric_name: str) -> List[Any]:
         def none_to_nan(x):
             return np.nan if x is None else x
-        return np.array([none_to_nan(snapshot[metric_name]) for snapshot in self.metrics])
+
+        return np.array(
+            [none_to_nan(snapshot[metric_name]) for snapshot in self.metrics]
+        )
 
     def save_to_json(self, fname: str):
-        with open(fname, "w") as f:
-            json.dump(self.metrics, f, ensure_ascii=False, indent=4)
+        if len(self.metrics) > 0:
+            with open(fname, "w") as f:
+                json.dump(self.metrics, f, ensure_ascii=False, indent=4)
+
+    def save_to_csv(self, fname: str):
+        if len(self.metrics) > 0:
+            with open(fname, "w", newline="") as f:
+                w = csv.DictWriter(f, self.metrics[0].keys())
+                w.writeheader()
+                w.writerows(self.metrics)
 
 
 class MetricsPlots:
@@ -44,3 +56,10 @@ class MetricsPlots:
         plt.figure()
         self.plot_f(**{k: agg.get_metric(k) for k in self.metric_names})
         plt.savefig(f"{results_dir}/{self.plot_name}.png")
+
+
+if __name__ == "__main__":
+    with open("./results/synced_flip_payout_1701933173/data/prices.json") as f:
+        metrics = json.load(f)
+        ma = MetricsAggregator(metrics)
+        ma.save_to_csv("./results/synced_flip_payout_1701933173/data/prices.csv")

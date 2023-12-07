@@ -131,6 +131,9 @@ class MarketSimulation(Simulation):
                 self.metrics_aggregator.save_to_json(
                     f"{self.save_results_path}/data/prices.json"
                 )
+                self.metrics_aggregator.save_to_csv(
+                    f"{self.save_results_path}/data/prices.csv"
+                )
                 for plot in self.metrics_plots:
                     plot.plot(
                         self.metrics_aggregator, f"{self.save_results_path}/graphs"
