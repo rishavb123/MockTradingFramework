@@ -306,3 +306,17 @@ class ArbAgent(Agent):
                 )
 
         return super().update()
+
+
+class MarketMaker(Agent):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.fair_value = 50  # Calculate a current fair for the stock
+        self.edge = 5  # Place orders around the fair value
+        self.close_out_positions_at = 50
+
+    def update(self) -> None:
+        if self.exchange.time_remaining < self.close_out_positions_at:
+            self.holdings = self.exchange.get_account_holdings(self)
+            pass  # Get rid of any positions now
