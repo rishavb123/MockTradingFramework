@@ -418,6 +418,9 @@ class Agent(SimulationObject):
         for order_id in self.open_orders:
             self.cancel(order_id)
 
+    def executed_trade(self, symbol: str, dir: int, price: float, size: int) -> None:
+        pass
+
     def update(self) -> None:
         self.open_orders = {
             order_id: order
@@ -570,6 +573,8 @@ class Exchange(SimulationObject):
         self.__accounts[buyer.global_id].update_holding(symbol, size)
         self.__accounts[seller.global_id].update_holding(Account.CASH_SYM, price * size)
         self.__accounts[seller.global_id].update_holding(symbol, -size)
+        buyer.executed_trade(symbol=symbol, dir=Order.BUY_DIR, price=price, size=size)
+        seller.executed_trade(symbol=symbol, dir=Order.SELL_DIR, price=price, size=size)
 
     def register_product(self, product: Product) -> bool:
         if product.symbol not in self.__order_books:

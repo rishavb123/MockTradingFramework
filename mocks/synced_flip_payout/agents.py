@@ -320,3 +320,20 @@ class MarketMaker(Agent):
         if self.exchange.time_remaining < self.close_out_positions_at:
             self.holdings = self.exchange.get_account_holdings(self)
             pass  # Get rid of any positions now
+
+            for symbol in self.holdings:
+
+                if self.opinion == 1:
+                    self.bid(
+                        price=MAX_PAYOUT - TICK_SIZE,
+                        size=self.sizing,
+                        symbol=symbol,
+                        frames_to_expire=2,
+                    )
+                else:
+                    self.ask(
+                        price=TICK_SIZE,
+                        size=self.sizing,
+                        symbol=symbol,
+                        frames_to_expire=2,
+                    )
