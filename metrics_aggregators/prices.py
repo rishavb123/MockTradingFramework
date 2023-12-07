@@ -84,11 +84,11 @@ class PricePlot(MetricsPlots):
         mid = (bid + ask) / 2
         swmid = (bid * ask_size + ask * bid_size) / (bid_size + ask_size)
 
-        plt.plot(times, swmid, label="swmid", linewidth=1)
         plt.plot(times, last_traded_price, label="last_traded_price", linewidth=1)
-        plt.plot(times, mid, label="mid", linewidth=1)
         plt.plot(times, bid, label="bid", linewidth=1)
         plt.plot(times, ask, label="ask", linewidth=1)
+        plt.plot(times, swmid, label="swmid", linewidth=1)
+        plt.plot(times, mid, label="mid", linewidth=1)
 
         plt.xlabel("Time")
         plt.ylabel("Price")
