@@ -15,7 +15,7 @@ def main() -> None:
 
     agents = (
         [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)]
-        + [RetailInvestor() for _ in range(NUM_RETAIL_TRADERS)]
+        + [RetailInvestor() for _ in range(NUM_RETAIL_INVESTORS)]
         + [
             HedgeFund(),
             ArbAgent(),
@@ -42,6 +42,7 @@ def main() -> None:
         info["PAYOUT"] = PAYOUT
         info["MAX_PAYOUT"] = MAX_PAYOUT
         info["NUM_RETAIL_TRADERS"] = NUM_RETAIL_TRADERS
+        info["NUM_RETAIL_INVESTORS"] = NUM_RETAIL_INVESTORS
         info["RETAIL_PAYOUT_PRIOR_STRENGTH"] = RETAIL_PAYOUT_PRIOR_STRENGTH
         info["RETAIL_MIN_CONFIDENCE"] = RETAIL_MIN_CONFIDENCE
         info["RETAIL_SIZING_RANGE"] = RETAIL_SIZING_RANGE
