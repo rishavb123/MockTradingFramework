@@ -136,7 +136,7 @@ class MarketSimulation(Simulation):
                 )
                 for plot in self.metrics_plots:
                     plot.plot(
-                        self.metrics_aggregator, f"{self.save_results_path}/graphs"
+                        self.metrics_aggregator, f"{self.save_results_path}/graphs", (20, 8)
                     )
 
             with open(f"{self.save_results_path}/data/info.json", "w") as f:

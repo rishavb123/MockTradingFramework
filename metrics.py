@@ -3,7 +3,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, Tuple, Union
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
@@ -52,7 +52,12 @@ class MetricsPlots:
         self.metric_names = metric_names
         self.plot_f = plot_f
 
-    def plot(self, agg: MetricsAggregator, results_dir: str) -> None:
-        plt.figure()
+    def plot(
+        self,
+        agg: MetricsAggregator,
+        results_dir: str,
+        figsize: Union[Tuple[float, float], None] = None,
+    ) -> None:
+        plt.figure(figsize=figsize)
         self.plot_f(**{k: agg.get_metric(k) for k in self.metric_names})
         plt.savefig(f"{results_dir}/{self.plot_name}.png")
