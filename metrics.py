@@ -6,23 +6,30 @@ matplotlib.use("Agg")
 from typing import List, Dict, Any, Callable
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
-from simulation import SimulationObject
+from simulation import SimulationObject, Time
 
 
 class MetricsAggregator(SimulationObject):
-    def __init__(self) -> None:
+    def __init__(self, initial_metrics: List[Dict[str, Any]] = []) -> None:
         super().__init__()
-        self.metrics = []
+        self.metrics = initial_metrics
 
     def snapshot(self) -> Dict[str, Any]:
         return {}
 
     def update(self) -> None:
-        self.metrics.append(self.snapshot())
+        self.metrics.append(self.snapshot() | {"time": Time.now})
 
     def get_metric(self, metric_name: str) -> List[Any]:
-        return np.array([snapshot[metric_name] for snapshot in self.metrics])
+        def none_to_nan(x):
+            return np.nan if x is None else x
+        return np.array([none_to_nan(snapshot[metric_name]) for snapshot in self.metrics])
+
+    def save_to_json(self, fname: str):
+        with open(fname, "w") as f:
+            json.dump(self.metrics, f, ensure_ascii=False, indent=4)
 
 
 class MetricsPlots:
