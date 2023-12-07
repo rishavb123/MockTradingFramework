@@ -22,8 +22,8 @@ class PriceAggregator(MetricsAggregator):
             bids = order_books[symbol].bids
             asks = order_books[symbol].asks
 
-            bid = np.nan
-            bid_size = np.nan
+            bid = None
+            bid_size = None
             if len(bids) > 0:
                 bid = bids[-1].price
                 bid_size = bids[-1].size
@@ -32,8 +32,8 @@ class PriceAggregator(MetricsAggregator):
                     bid_size += bids[-cur_idx].size
                     cur_idx += 1
 
-            ask = np.nan
-            ask_size = np.nan
+            ask = None
+            ask_size = None
             if len(asks) > 0:
                 ask = asks[-1].price
                 ask_size = asks[-1].size
@@ -42,7 +42,7 @@ class PriceAggregator(MetricsAggregator):
                     ask_size += asks[-cur_idx].size
                     cur_idx += 1
 
-            last_traded_price = np.nan
+            last_traded_price = None
             if len(product.trades) > 0:
                 last_traded_price = product.trades[-1].price
 
