@@ -162,3 +162,46 @@ class HedgeFund(Agent):
                     )
 
         return super().update()
+
+
+class ArbAgent(Agent):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def update(self) -> None:
+        order_books = self.exchange.public_info()
+
+        markets = {}
+
+        for symbol in order_books:
+            bids = order_books[symbol].bids
+            asks = order_books[symbol].asks
+
+            if len(bids) > 0 and len(asks) > 0:
+                markets[symbol] = (
+                    bids[-1].price,
+                    bids[-1].size,
+                    asks[-1].price,
+                    asks[-1].size,
+                )
+
+        if len(markets) > 0:
+            highest_bid_symbol = max(markets, key=lambda symbol: markets[symbol][0])
+            lowest_ask_symbol = max(markets, key=lambda symbol: markets[symbol][2])
+
+            if highest_bid_symbol > lowest_ask_symbol:
+                size = min(
+                    markets[highest_bid_symbol][1], markets[lowest_ask_symbol][3]
+                )
+                self.ask(
+                    price=markets[highest_bid_symbol][0] - 1,
+                    size=size,
+                    symbol=highest_bid_symbol,
+                )
+                self.bid(
+                    price=markets[lowest_ask_symbol][2] + 1,
+                    size=size,
+                    symbol=lowest_ask_symbol,
+                )
+
+        return super().update()

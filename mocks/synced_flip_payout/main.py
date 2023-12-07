@@ -6,7 +6,7 @@ from agents import ManualAgent
 from metrics_aggregators.prices import PriceAggregator, PricePlot
 
 from .config import *
-from .agents import RetailTrader, HedgeFund
+from .agents import RetailTrader, HedgeFund, ArbAgent
 from .products import PairedFlipProduct
 
 
@@ -15,6 +15,7 @@ def main() -> None:
 
     agents = [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)] + [
         HedgeFund(),
+        ArbAgent(),
         ManualAgent(),
     ]
     manual_agent = agents[-1]
