@@ -66,6 +66,8 @@ class MarketSimulation(Simulation):
             if os.path.exists(self.save_results_path):
                 shutil.rmtree(self.save_results_path)
             os.mkdir(self.save_results_path)
+            os.mkdir(f"{self.save_results_path}/graphs")
+            os.mkdir(f"{self.save_results_path}/data")
         if self.payout_on_finish:
             for exchange in self.exchanges:
                 exchange.payout_for_holdings()
@@ -106,9 +108,9 @@ class MarketSimulation(Simulation):
             plt.xlabel("Agent Class")
             plt.ylabel("PNL")
             plt.title("PNL by Agent Class")
-            plt.savefig(f"{self.save_results_path}/pnl_by_agent_cls.png")
+            plt.savefig(f"{self.save_results_path}/graphs/pnl_by_agent_cls.png")
 
-            with open(f"{self.save_results_path}/agent_pnl.json", "w") as f:
+            with open(f"{self.save_results_path}/data/agent_pnl.json", "w") as f:
                 json.dump(
                     {
                         agent_cls: {
@@ -126,10 +128,15 @@ class MarketSimulation(Simulation):
                 )
 
             if self.metrics_aggregator is not None:
+                self.metrics_aggregator.save_to_json(
+                    f"{self.save_results_path}/data/prices.json"
+                )
                 for plot in self.metrics_plots:
-                    plot.plot(self.metrics_aggregator, self.save_results_path)
+                    plot.plot(
+                        self.metrics_aggregator, f"{self.save_results_path}/graphs"
+                    )
 
-            with open(f"{self.save_results_path}/info.json", "w") as f:
+            with open(f"{self.save_results_path}/data/info.json", "w") as f:
                 json.dump(self.save_run_info(), f, ensure_ascii=False, indent=4)
 
 
