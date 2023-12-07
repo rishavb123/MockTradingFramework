@@ -75,6 +75,11 @@ class ManualAgent(Agent):
                     short_name="c",
                 ),
                 Command(
+                    self.cancel_all_open_orders,
+                    args_definitions=[],
+                    short_name="ca",
+                ),
+                Command(
                     self.select_symbol,
                     args_definitions=[
                         Argument(str, None),
