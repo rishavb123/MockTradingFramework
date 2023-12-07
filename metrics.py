@@ -56,10 +56,3 @@ class MetricsPlots:
         plt.figure()
         self.plot_f(**{k: agg.get_metric(k) for k in self.metric_names})
         plt.savefig(f"{results_dir}/{self.plot_name}.png")
-
-
-if __name__ == "__main__":
-    with open("./results/synced_flip_payout_1701933173/data/prices.json") as f:
-        metrics = json.load(f)
-        ma = MetricsAggregator(metrics)
-        ma.save_to_csv("./results/synced_flip_payout_1701933173/data/prices.csv")
