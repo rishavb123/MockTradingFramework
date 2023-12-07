@@ -6,18 +6,22 @@ from agents import ManualAgent
 from metrics_aggregators.prices import PriceAggregator, PricePlot
 
 from .config import *
-from .agents import RetailTrader, HedgeFund, ArbAgent
+from .agents import RetailInvestor, RetailTrader, HedgeFund, ArbAgent
 from .products import PairedFlipProduct
 
 
 def main() -> None:
     products = [PairedFlipProduct(symbol) for symbol in SYMBOLS]
 
-    agents = [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)] + [
-        HedgeFund(),
-        ArbAgent(),
-        ManualAgent(),
-    ]
+    agents = (
+        [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)]
+        + [RetailInvestor() for _ in range(NUM_RETAIL_TRADERS)]
+        + [
+            HedgeFund(),
+            ArbAgent(),
+            ManualAgent(),
+        ]
+    )
     manual_agent = agents[-1]
 
     exchange = Exchange(

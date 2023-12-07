@@ -6,6 +6,55 @@ from trading_objects import Agent, Exchange, Event
 from .config import *
 
 
+class RetailInvestor(Agent):
+    def __init__(self) -> None:
+        super().__init__()
+        self.opinion = generate_fact(
+            thresh=(
+                0.5
+                + (
+                    RETAIL_PAYOUT_PRIOR_STRENGTH
+                    if PAYOUT > 0
+                    else -RETAIL_PAYOUT_PRIOR_STRENGTH
+                )
+            )
+        )
+        self.sizing = np.random.randint(*RETAIL_SIZING_RANGE)
+        self.frames_to_expire = 100
+
+    def update(self) -> None:
+        order_books = self.exchange.public_info()
+
+        cheapest_investment = None
+        for symbol in order_books:
+            if self.opinion == 1:
+                asks = order_books[symbol].asks
+                if len(asks) > 0 and (
+                    cheapest_investment is None
+                    or asks[-1].price < cheapest_investment[1]
+                ):
+                    cheapest_investment = symbol, asks[-1].price
+            else:
+                bids = order_books[symbol].bids
+                if len(bids) > 0 and (
+                    cheapest_investment is None
+                    or bids[-1].price > cheapest_investment[1]
+                ):
+                    cheapest_investment = symbol, bids[-1].price
+
+        if (
+            cheapest_investment is not None
+            and np.random.random() < RETAIL_ORDER_UPDATE_FREQ
+        ):
+            self.limit_order(
+                dir=self.opinion,
+                price=cheapest_investment[1],
+                size=self.sizing,
+                symbol=cheapest_investment[0],
+                frames_to_expire=self.frames_to_expire,
+            )
+
+
 class RetailTrader(Agent):
     def __init__(self) -> None:
         super().__init__()
@@ -159,11 +208,17 @@ class HedgeFund(Agent):
             if self.exchange.time_remaining < self.take_all_orders_at:
                 if self.opinion == 1:
                     self.bid(
-                        price=MAX_PAYOUT - TICK_SIZE, size=self.sizing, symbol=symbol, frames_to_expire=2
+                        price=MAX_PAYOUT - TICK_SIZE,
+                        size=self.sizing,
+                        symbol=symbol,
+                        frames_to_expire=2,
                     )
                 else:
                     self.ask(
-                        price=TICK_SIZE, size=self.sizing, symbol=symbol, frames_to_expire=2
+                        price=TICK_SIZE,
+                        size=self.sizing,
+                        symbol=symbol,
+                        frames_to_expire=2,
                     )
 
         return super().update()
