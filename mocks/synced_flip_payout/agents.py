@@ -319,7 +319,6 @@ class MarketMaker(Agent):
     def update(self) -> None:
         if self.exchange.time_remaining < self.close_out_positions_at:
             self.holdings = self.exchange.get_account_holdings(self)
-            pass  # Get rid of any positions now
 
             for symbol in self.holdings:
 
