@@ -34,10 +34,11 @@ def main() -> None:
             HedgeFund(),
             ArbAgent(),
             MarketMaker(),
-            ManualAgent(),
         ]
     )
-    manual_agent = agents[-1]
+    if CONNECT_MANUAL_AGENT:
+        manual_agent = ManualAgent()
+        agents.append(manual_agent)
 
     exchange = Exchange(
         tick_size=TICK_SIZE,
@@ -56,7 +57,7 @@ def main() -> None:
         info["SYMBOLS"] = SYMBOLS
         info["TICK_SIZE"] = TICK_SIZE
         info["ITER"] = ITER
-        info["DT"] = DT
+        info["DT"] = DT if CONNECT_MANUAL_AGENT else 0
         info["VOLUME_WINDOW_SIZE"] = VOLUME_WINDOW_SIZE
         info["FACT"] = FACT
         info["PAYOUT"] = PAYOUT
@@ -77,8 +78,8 @@ def main() -> None:
         exchanges=exchange,
         agents=agents,
         products=products,
-        display_to_console=False,
-        dt=DT,
+        display_to_console=DISPLAY_TO_CONSOLE,
+        dt=DT if CONNECT_MANUAL_AGENT else 0,
         iter=ITER,
         metrics_aggregator=combined_aggregator,
         metrics_plots=plots,
@@ -89,8 +90,9 @@ def main() -> None:
     )
     sim.start()
 
-    sim.connect_display(manual_agent.gui)
-    manual_agent.gui.run()
+    if CONNECT_MANUAL_AGENT:
+        sim.connect_display(manual_agent.gui)
+        manual_agent.gui.run()
 
 
 if __name__ == "__main__":

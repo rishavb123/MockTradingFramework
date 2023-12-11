@@ -612,7 +612,7 @@ class Exchange(SimulationObject):
             s += f"\tSymbol: {symbol}\n"
             s += prefix_lines(
                 self.__order_books[symbol].display_str(viewer=viewer, k=k), "\t\t"
-            )
+            )[:-2]
         return s + "\n\n"
 
     def payout_for_holdings(self):
