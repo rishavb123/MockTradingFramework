@@ -557,24 +557,21 @@ class Exchange(SimulationObject):
 
     def get_mark_to_market_mid_pnl(self, agent):
         order_book = self.public_info()
-        pnl = 0
+        pnl = self.__accounts[agent.global_id].get_holding(Account.CASH_SYM)
         for symbol in list(self.__products.keys()):
-            if symbol == Account.CASH_SYM:
-                pnl += self.__accounts[agent.global_id].get_holding(symbol)
+            bids = order_book[symbol].bids
+            asks = order_book[symbol].asks
+
+            if len(bids) > 0 and len(asks) > 0:
+                mid = (bids[-1].price + asks[-1].price) / 2
+            elif len(bids) > 0:
+                mid = bids[-1].price
+            elif len(asks) > 0:
+                mid = asks[-1].price
             else:
-                bids = order_book[symbol].bids
-                asks = order_book[symbol].asks
+                mid = 0
 
-                if len(bids) > 0 and len(asks) > 0:
-                    mid = (bids[-1].price + asks[-1].price) / 2
-                elif len(bids) > 0:
-                    mid = bids[-1].price
-                elif len(asks) > 0:
-                    mid = asks[-1].price
-                else:
-                    mid = 0
-
-                pnl += self.__accounts[agent.global_id].get_holding(symbol) * mid
+            pnl += self.__accounts[agent.global_id].get_holding(symbol) * mid
         return pnl
 
     def place_order(self, order: Order) -> None:

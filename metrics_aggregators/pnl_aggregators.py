@@ -98,7 +98,8 @@ class PnlPlot(MetricsPlots):
 
         plt.plot(times, pnl_means, label="average pnl", c="blue", alpha=0.9)
 
+        plt.title(f"{self.agent_class_name} PNL")
         plt.xlabel("Time")
-        plt.ylabel("Pnl")
+        plt.ylabel("PNL")
 
         plt.legend()
