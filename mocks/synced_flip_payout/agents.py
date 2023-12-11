@@ -1,4 +1,3 @@
-from typing import Union
 import numpy as np
 
 from trading_objects import Agent, Exchange, Event
@@ -24,6 +23,7 @@ class RetailInvestor(Agent):
 
     def update(self) -> None:
         super().update()
+
         order_books = self.exchange.public_info()
 
         cheapest_investment = None
@@ -91,6 +91,7 @@ class RetailTrader(Agent):
 
     def update(self) -> None:
         super().update()
+
         order_books = self.exchange.public_info()
 
         bids = order_books[self.symbol].bids
@@ -211,6 +212,7 @@ class HedgeFund(Agent):
 
     def update(self) -> None:
         super().update()
+
         order_books = self.exchange.public_info()
 
         for symbol in order_books:
@@ -274,6 +276,7 @@ class ArbAgent(Agent):
 
     def update(self) -> None:
         super().update()
+
         order_books = self.exchange.public_info()
 
         markets = {}
@@ -359,6 +362,7 @@ class MarketMaker(Agent):
 
     def update(self) -> None:
         super().update()
+
         if self.exchange.time_remaining < self.close_out_positions_at:
             self.close_positions()
         else:
