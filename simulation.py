@@ -27,11 +27,12 @@ class SimulationObject:
         self.__z_index = z_index
         self.simulation = None
         self.dependents = []
+        self.__cache = {}
 
         SimulationObject.__objects[self.global_id] = self
 
     def update(self) -> None:
-        pass
+        self.__cache = {}
 
     def set_simulation(self, simulation: Simulation) -> None:
         self.simulation = simulation
@@ -75,6 +76,17 @@ class SimulationObject:
     @classmethod
     def get_instance(cls, id: int) -> Self:
         return SimulationObject.get_object(cls.to_global_id(id))
+    
+    def cache_wrapper(self):
+        def wrapper(f):
+            def g():
+                v = self.__cache.get(f.__name__, None)
+                if v is None:
+                    return f()
+                else:
+                    return v
+            return g
+        return wrapper
 
 
 class Simulation(threading.Thread):

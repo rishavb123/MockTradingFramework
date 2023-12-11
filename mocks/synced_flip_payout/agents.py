@@ -23,6 +23,7 @@ class RetailInvestor(Agent):
         self.resting_order_expire_time = 100
 
     def update(self) -> None:
+        super().update()
         order_books = self.exchange.public_info()
 
         cheapest_investment = None
@@ -89,6 +90,7 @@ class RetailTrader(Agent):
         self.symbol = SYMBOLS[symbol_idx]
 
     def update(self) -> None:
+        super().update()
         order_books = self.exchange.public_info()
 
         bids = order_books[self.symbol].bids
@@ -208,6 +210,7 @@ class HedgeFund(Agent):
                 self.ask(price=event.price, size=event.size, symbol=event.symbol)
 
     def update(self) -> None:
+        super().update()
         order_books = self.exchange.public_info()
 
         for symbol in order_books:
@@ -270,6 +273,7 @@ class ArbAgent(Agent):
         super().__init__()
 
     def update(self) -> None:
+        super().update()
         order_books = self.exchange.public_info()
 
         markets = {}
@@ -315,24 +319,47 @@ class MarketMaker(Agent):
         self.fair_value = 50  # Calculate a current fair for the stock
         self.edge = 5  # Place orders around the fair value
         self.close_out_positions_at = 50
+        self.price_margin_on_close = 5
+
+    def close_positions(self) -> None:
+        order_books = self.exchange.public_info()
+        self.holdings = self.exchange.get_account_holdings(self)
+
+        total_holding = sum(self.holdings.values())
+
+        if total_holding == 0:
+            self.cancel_all_open_orders()
+            return
+
+        for symbol in self.holdings:
+            bids = order_books[self.symbol].bids
+            asks = order_books[self.symbol].asks
+
+            if total_holding > 0:
+                if best_price is None or asks[-1].price > best_price[1]:
+                    best_price = symbol, asks[-1].price, asks[-1].size
+            else:
+                if best_price is None or bids[-1].price < best_price[1]:
+                    best_price = symbol, bids[-1].price, bids[-1].size
+
+        if total_holding > 0:
+            self.bid(
+                price=best_price[1] + 5 * TICK_SIZE,
+                size=best_price[2] * 2,
+                symbol=best_price[0],
+                frames_to_expire=5,
+            )
+        else:
+            self.ask(
+                price=best_price[1] - 5 * TICK_SIZE,
+                size=best_price[2] * 2,
+                symbol=best_price[0],
+                frames_to_expire=5,
+            )
 
     def update(self) -> None:
+        super().update()
         if self.exchange.time_remaining < self.close_out_positions_at:
-            self.holdings = self.exchange.get_account_holdings(self)
-
-            for symbol in self.holdings:
-
-                if self.opinion == 1:
-                    self.bid(
-                        price=MAX_PAYOUT - TICK_SIZE,
-                        size=self.sizing,
-                        symbol=symbol,
-                        frames_to_expire=2,
-                    )
-                else:
-                    self.ask(
-                        price=TICK_SIZE,
-                        size=self.sizing,
-                        symbol=symbol,
-                        frames_to_expire=2,
-                    )
+            self.close_positions()
+        else:
+            pass

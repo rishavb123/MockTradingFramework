@@ -47,6 +47,7 @@ class Order(SimulationObject):
         return self.id
 
     def update(self) -> None:
+        super().update()
         if self.__frames_to_expire is not None:
             self.__frames_to_expire -= 1
             if self.__frames_to_expire <= 0:
@@ -238,6 +239,7 @@ class OrderBook(SimulationObject):
         Order.get_instance(order_id).cancel()
 
     def update(self) -> None:
+        super().update()
         self.__place_orders(*self._orders_to_place)
         self.__clean_orders()
         self.__match_orders()
@@ -422,6 +424,7 @@ class Agent(SimulationObject):
         pass
 
     def update(self) -> None:
+        super().update()
         self.open_orders = {
             order_id: order
             for order_id, order in self.open_orders.items()
@@ -451,6 +454,7 @@ class Account(SimulationObject):
         self.__holdings[symbol.upper()] = val
 
     def update_holding(self, symbol: str, val: int) -> None:
+        super().update()
         self.set_holding(symbol.upper(), val=val + self.get_holding(symbol))
 
 

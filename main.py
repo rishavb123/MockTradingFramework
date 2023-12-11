@@ -8,6 +8,7 @@ class TestObject(SimulationObject):
         self.s = s
 
     def update(self) -> None:
+        super().update()
         print(self.s, Time.now)
 
 

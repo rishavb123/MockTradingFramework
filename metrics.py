@@ -21,6 +21,7 @@ class MetricsAggregator(SimulationObject):
         return {}
 
     def update(self) -> None:
+        super().update()
         self.metrics.append(self.snapshot() | {"time": Time.now})
 
     def get_metric(self, metric_name: str) -> List[Any]:
