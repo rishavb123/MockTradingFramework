@@ -200,7 +200,6 @@ class OrderBook(SimulationObject):
             len(self.bids) > 0
             and len(self.asks) > 0
             and self.bids[-1].price >= self.asks[-1].price
-            and self.bids[-1].sender != self.asks[-1].sender
         ):
             matched_bid = self.bids[-1]
             matched_ask = self.asks[-1]
@@ -209,7 +208,7 @@ class OrderBook(SimulationObject):
             else:
                 trade_price = matched_ask.price
             trade_size = min(matched_bid.size, matched_ask.size)
-            if self.exchange is not None:
+            if self.exchange is not None and matched_bid.sender != matched_ask.sender:
                 self.exchange.execute_trade(
                     self.symbol,
                     trade_price,
