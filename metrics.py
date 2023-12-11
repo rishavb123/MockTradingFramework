@@ -29,7 +29,7 @@ class MetricsAggregator(SimulationObject):
             return np.nan if x is None else x
 
         return np.array(
-            [none_to_nan(snapshot[metric_name]) for snapshot in self.metrics]
+            [none_to_nan(snapshot[metric_name]) for snapshot in self.metrics], dtype=np.float64
         )
 
     def save_to_json(self, fname: str) -> None:

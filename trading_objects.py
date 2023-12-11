@@ -430,6 +430,11 @@ class Agent(SimulationObject):
             if not order.voided()
         }
 
+    def get_mark_to_market_mid_pnl(self) -> float:
+        return sum(
+            [exchange.get_mark_to_market_mid_pnl(self) for exchange in self.exchanges.values()]
+        )
+
     @property
     def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:
         if len(self.exchanges) == 1:
@@ -562,10 +567,15 @@ class Exchange(SimulationObject):
 
                 if len(bids) > 0 and len(asks) > 0:
                     mid = (bids[-1].price + asks[-1].price) / 2
+                elif len(bids) > 0:
+                    mid = bids[-1].price
+                elif len(asks) > 0:
+                    mid = asks[-1].price
                 else:
                     mid = 0
 
                 pnl += self.__accounts[agent.global_id].get_holding(symbol) * mid
+        return pnl
 
     def place_order(self, order: Order) -> None:
         self.__accounts[order.sender.global_id].update_holding(

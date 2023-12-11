@@ -8,6 +8,8 @@ from metrics_aggregators import (
     PricePlot,
     VolumeAggregator,
     VolumePlot,
+    MarkToMarketMidPnlAggregator,
+    PnlPlot,
     CombinedMetricsAggregator,
 )
 
@@ -40,6 +42,8 @@ def main() -> None:
         manual_agent = ManualAgent()
         agents.append(manual_agent)
 
+    agent_classes = list(set([agent.__class__ for agent in agents]))
+
     exchange = Exchange(
         tick_size=TICK_SIZE,
     )
@@ -48,8 +52,15 @@ def main() -> None:
     volume_aggregator = VolumeAggregator(
         products=products, window_size=VOLUME_WINDOW_SIZE
     )
-    combined_aggregator = CombinedMetricsAggregator(price_aggregator, volume_aggregator)
-    plots = [PricePlot(symbol=symbol) for symbol in SYMBOLS] + [VolumePlot(SYMBOLS)]
+    pnl_aggregator = MarkToMarketMidPnlAggregator(agents)
+    combined_aggregator = CombinedMetricsAggregator(
+        price_aggregator, volume_aggregator, pnl_aggregator
+    )
+    plots = (
+        [PricePlot(symbol=symbol) for symbol in SYMBOLS]
+        + [VolumePlot(SYMBOLS)]
+        + [PnlPlot(agent_class.__name__) for agent_class in agent_classes]
+    )
 
     def run_info():
         info = {}
@@ -87,6 +98,7 @@ def main() -> None:
         if SAVE_RESULTS
         else None,
         save_run_info=run_info,
+        additional_dirs_required=["graphs/pnls"]
     )
     sim.start()
 

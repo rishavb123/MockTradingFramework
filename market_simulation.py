@@ -33,6 +33,7 @@ class MarketSimulation(Simulation):
         metrics_plots: List[MetricsPlots] = [],
         save_results_path: Union[str, None] = None,
         save_run_info: Union[Callable[[None], Dict[str, Any]], None] = None,
+        additional_dirs_required: List[str] = [],
     ) -> None:
         if isinstance(exchanges, Exchange):
             exchanges = [exchanges]
@@ -44,6 +45,7 @@ class MarketSimulation(Simulation):
         self.save_run_info = save_run_info
         self.metrics_aggregator = metrics_aggregator
         self.metrics_plots = metrics_plots
+        self.additional_dirs_required = additional_dirs_required
         for exchange in exchanges:
             for product in products:
                 exchange.register_product(product)
@@ -68,6 +70,8 @@ class MarketSimulation(Simulation):
             os.mkdir(self.save_results_path)
             os.mkdir(f"{self.save_results_path}/graphs")
             os.mkdir(f"{self.save_results_path}/data")
+            for dir in self.additional_dirs_required:
+                os.mkdir(f"{self.save_results_path}/{dir}")
         if self.payout_on_finish:
             for exchange in self.exchanges:
                 exchange.payout_for_holdings()
@@ -136,7 +140,9 @@ class MarketSimulation(Simulation):
                 )
                 for plot in self.metrics_plots:
                     plot.plot(
-                        self.metrics_aggregator, f"{self.save_results_path}/graphs", (20, 8)
+                        self.metrics_aggregator,
+                        f"{self.save_results_path}/graphs",
+                        (20, 8),
                     )
 
             with open(f"{self.save_results_path}/data/info.json", "w") as f:
