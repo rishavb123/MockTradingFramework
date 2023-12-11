@@ -164,6 +164,34 @@ class RetailTrader(Agent):
                 )
 
 
+class BandwagonInvestor(RetailInvestor):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def update(self) -> None:
+        order_books = self.exchange.public_info()
+
+        mid_sum = 0
+        mid_count = 0
+
+        for symbol in order_books:
+            bids = order_books[symbol].bids
+            asks = order_books[symbol].asks
+
+            if len(bids) > 0 and len(asks) > 0:
+                mid = (bids[-1].price + asks[-1].price) / 2
+                mid_sum += mid
+                mid_count += 1
+
+        if mid_count > 0:
+            if mid_sum > 50 * mid_count:
+                self.opinion = 1
+            else:
+                self.opinion = -1
+
+        super().update()
+
+
 class HedgeFund(Agent):
     def __init__(self) -> None:
         super().__init__()

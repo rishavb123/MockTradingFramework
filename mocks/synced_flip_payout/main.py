@@ -12,7 +12,14 @@ from metrics_aggregators import (
 )
 
 from .config import *
-from .agents import RetailInvestor, RetailTrader, HedgeFund, ArbAgent, MarketMaker
+from .agents import (
+    RetailInvestor,
+    RetailTrader,
+    BandwagonInvestor,
+    HedgeFund,
+    ArbAgent,
+    MarketMaker,
+)
 from .products import PairedFlipProduct
 
 
@@ -22,6 +29,7 @@ def main() -> None:
     agents = (
         [RetailTrader() for _ in range(NUM_RETAIL_TRADERS)]
         + [RetailInvestor() for _ in range(NUM_RETAIL_INVESTORS)]
+        + [BandwagonInvestor() for _ in range(NUM_BANDWAGON_INVESTORS)]
         + [
             HedgeFund(),
             ArbAgent(),
@@ -36,7 +44,9 @@ def main() -> None:
     )
 
     price_aggregator = PriceAggregator(exchange=exchange, products=products)
-    volume_aggregator = VolumeAggregator(products=products, window_size=VOLUME_WINDOW_SIZE)
+    volume_aggregator = VolumeAggregator(
+        products=products, window_size=VOLUME_WINDOW_SIZE
+    )
     combined_aggregator = CombinedMetricsAggregator(price_aggregator, volume_aggregator)
     plots = [PricePlot(symbol=symbol) for symbol in SYMBOLS] + [VolumePlot(SYMBOLS)]
 
@@ -53,6 +63,7 @@ def main() -> None:
         info["MAX_PAYOUT"] = MAX_PAYOUT
         info["NUM_RETAIL_TRADERS"] = NUM_RETAIL_TRADERS
         info["NUM_RETAIL_INVESTORS"] = NUM_RETAIL_INVESTORS
+        info["NUM_BANDWAGON_INVESTORS"] = NUM_BANDWAGON_INVESTORS
         info["RETAIL_PAYOUT_PRIOR_STRENGTH"] = RETAIL_PAYOUT_PRIOR_STRENGTH
         info["RETAIL_MIN_CONFIDENCE"] = RETAIL_MIN_CONFIDENCE
         info["RETAIL_SIZING_RANGE"] = RETAIL_SIZING_RANGE
