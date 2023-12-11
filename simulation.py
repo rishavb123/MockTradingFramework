@@ -5,7 +5,7 @@ import time
 import threading
 import pygame
 
-from command_display import CommandDisplay, Command
+from command_display import CommandDisplay, Command, Argument
 
 
 class Time:
@@ -76,7 +76,7 @@ class SimulationObject:
     @classmethod
     def get_instance(cls, id: int) -> Self:
         return SimulationObject.get_object(cls.to_global_id(id))
-    
+
     def cache_wrapper(self):
         def wrapper(f):
             def g():
@@ -85,7 +85,9 @@ class SimulationObject:
                     return f()
                 else:
                     return v
+
             return g
+
         return wrapper
 
 
@@ -188,6 +190,9 @@ class Simulation(threading.Thread):
         self.finished = True
         self.on_finish()
 
+    def set_dt(self, dt):
+        self.dt = dt
+
     def connect_display(self, c: CommandDisplay):
         def quit():
             c.running = False
@@ -197,6 +202,9 @@ class Simulation(threading.Thread):
             Command(f=self.toggle_pause, short_name="p"),
             Command(f=self.manual_update, short_name="m"),
             Command(f=self.kill, short_name="k"),
+            Command(
+                f=self.set_dt, args_definitions=[Argument(float, 0.0)], short_name="dt"
+            ),
             Command(f=quit, short_name="q"),
         )
         c.add_macro(pygame.K_SPACE, "p")
