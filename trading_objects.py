@@ -550,6 +550,23 @@ class Exchange(SimulationObject):
             for symbol in ([Account.CASH_SYM] + list(self.__products.keys()))
         }
 
+    def get_mark_to_market_mid_pnl(self, agent):
+        order_book = self.public_info()
+        pnl = 0
+        for symbol in list(self.__products.keys()):
+            if symbol == Account.CASH_SYM:
+                pnl += self.__accounts[agent.global_id].get_holding(symbol)
+            else:
+                bids = order_book[symbol].bids
+                asks = order_book[symbol].asks
+
+                if len(bids) > 0 and len(asks) > 0:
+                    mid = (bids[-1].price + asks[-1].price) / 2
+                else:
+                    mid = 0
+
+                pnl += self.__accounts[agent.global_id].get_holding(symbol) * mid
+
     def place_order(self, order: Order) -> None:
         self.__accounts[order.sender.global_id].update_holding(
             Account.CASH_SYM, -self.order_fee
@@ -601,6 +618,7 @@ class Exchange(SimulationObject):
     def unsubscribe(self, agent: Agent) -> None:
         del self.__subscribed_callbacks[agent.global_id]
 
+    @SimulationObject.cache_wrapper
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:
         return {
             symbol: self.__order_books[symbol].public_info() for symbol in self.symbols

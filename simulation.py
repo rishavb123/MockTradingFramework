@@ -76,19 +76,27 @@ class SimulationObject:
     @classmethod
     def get_instance(cls, id: int) -> Self:
         return SimulationObject.get_object(cls.to_global_id(id))
+    
+    @classmethod
+    def get_all_instances(cls) -> List[Self]:
+        instances = []
+        for i in range(cls.last_id + 1):
+            obj = cls.get_instance(id=i)
+            if obj is not None:
+                instances.append(obj)
+        return instances
 
-    def cache_wrapper(self):
-        def wrapper(f):
-            def g():
-                v = self.__cache.get(f.__name__, None)
-                if v is None:
-                    return f()
-                else:
-                    return v
+    @staticmethod
+    def cache_wrapper(f):
+        def g(self):
+            v = self.__cache.get(f.__name__, None)
+            if v is None:
+                return f(self)
+            else:
+                return v
 
-            return g
+        return g
 
-        return wrapper
 
 
 class Simulation(threading.Thread):
