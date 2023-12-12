@@ -61,7 +61,7 @@ class CommandDisplay:
         margin: int = 10,
         fps: int = 60,
         output_box_width=300,
-        blinks_per_second: int = 2,
+        blinks_per_second: int = 3,
         font: str = "Courier New",
         font_size: int = 20,
         font_bold: bool = True,
@@ -87,10 +87,26 @@ class CommandDisplay:
 
         base_commands = [
             Command(f=self.quit, short_name="q"),
-            Command(f=self.view, short_name="v", args_definitions=[Argument(str, default_draw_state)]),
-            Command(f=self.view_idx, short_name="vi", args_definitions=[Argument(int, 0)]),
-            Command(f=self.view_up_or_down, name="view_up", args_definitions=[1], short_name="vu"),
-            Command(f=self.view_up_or_down, name="view_up", args_definitions=[-1], short_name="vd"),
+            Command(
+                f=self.view,
+                short_name="v",
+                args_definitions=[Argument(str, default_draw_state)],
+            ),
+            Command(
+                f=self.view_idx, short_name="vi", args_definitions=[Argument(int, 0)]
+            ),
+            Command(
+                f=self.view_up_or_down,
+                name="view_up",
+                args_definitions=[1],
+                short_name="vu",
+            ),
+            Command(
+                f=self.view_up_or_down,
+                name="view_up",
+                args_definitions=[-1],
+                short_name="vd",
+            ),
         ]
         self.add_commands(*(base_commands + commands))
 
@@ -122,11 +138,13 @@ class CommandDisplay:
         self.output_box_color = output_box_color
 
         if len(draw_fn_map) == 0:
-            self.draw_fn_map = {"empty": lambda:None}
+            self.draw_fn_map = {"empty": lambda: None}
             self.draw_state = "empty"
         else:
             self.draw_fn_map = draw_fn_map
-            self.draw_state = default_draw_state if start_draw_state is None else start_draw_state
+            self.draw_state = (
+                default_draw_state if start_draw_state is None else start_draw_state
+            )
         self.handle_event_fn = handle_event_fn
 
         self.cur_edit_mode = CommandDisplay.COMMAND_EDIT_MODE
@@ -141,7 +159,7 @@ class CommandDisplay:
             return f"Switched to {self.draw_state} view"
         else:
             return f"Index {i} view does not exist"
-        
+
     def view_up_or_down(self, dir: int) -> None:
         i = list(self.draw_fn_map.keys()).index(self.draw_state)
         i += dir
@@ -162,7 +180,11 @@ class CommandDisplay:
             | {c.short_name: c for c in commands if c.short_name is not None}
         )
 
-    def add_macro(self, pygame_keycode: int, command_str_or_generator: Union[str, Callable[[None], str]]) -> None:
+    def add_macro(
+        self,
+        pygame_keycode: int,
+        command_str_or_generator: Union[str, Callable[[None], str]],
+    ) -> None:
         self.macros[pygame_keycode] = command_str_or_generator
 
     def set_screen_size(self, w: int, h: int) -> None:
@@ -170,11 +192,12 @@ class CommandDisplay:
         self.h = h
         self.screen = pygame.display.set_mode((w, h))
 
-    def run_command(self, command_str: str, add_to_ran_commands: str=True) -> None:
+    def run_command(self, command_str: str, add_to_ran_commands: str = True) -> None:
         split_command = command_str.split(CommandDisplay.SPLIT_CHAR)
         command_name = split_command[0]
         if add_to_ran_commands:
-            self.ran_command_strs.append(command_str)
+            if len(self.ran_command_strs) == 0 or self.ran_command_strs[-1] != command_str:
+                self.ran_command_strs.append(command_str)
         if command_name in self.commands:
             result = self.commands[command_name].run(split_command[1:])
             if result is not None:
@@ -253,7 +276,10 @@ class CommandDisplay:
                     self.running = False
                 elif event.type == pygame.KEYDOWN:
                     if self.cur_edit_mode == CommandDisplay.COMMAND_EDIT_MODE:
-                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                        if (
+                            event.key == pygame.K_RETURN
+                            or event.key == pygame.K_KP_ENTER
+                        ):
                             self.run_command(self.command_buffer)
                             self.command_buffer = ""
                             self.ran_command_strs_idx = 0
@@ -283,7 +309,11 @@ class CommandDisplay:
                         if event.key == pygame.K_i:
                             self.cur_edit_mode = CommandDisplay.COMMAND_EDIT_MODE
                         if event.key in self.macros:
-                            command_str = self.macros[event.key] if type(self.macros[event.key]) == str else self.macros[event.key]()
+                            command_str = (
+                                self.macros[event.key]
+                                if type(self.macros[event.key]) == str
+                                else self.macros[event.key]()
+                            )
                             self.run_command(command_str, False)
 
                     if self.handle_event_fn is not None:
@@ -293,9 +323,18 @@ class CommandDisplay:
 
             blink = (counter * self.blinks_per_second // self.fps) % 2 == 0
 
-            prefix = "> " if blink or self.cur_edit_mode == CommandDisplay.MACRO_EDIT_MODE else "  "
+            prefix = (
+                "> "
+                # if blink or self.cur_edit_mode == CommandDisplay.MACRO_EDIT_MODE
+                # else "  "
+            )
+            suffix = (
+                " "
+                if blink or self.cur_edit_mode == CommandDisplay.MACRO_EDIT_MODE
+                else "_"
+            )
             block = self.command_font.render(
-                prefix + self.command_buffer,
+                prefix + self.command_buffer + suffix,
                 True,
                 self.command_color,
             )
