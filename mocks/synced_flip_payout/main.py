@@ -49,7 +49,7 @@ def main() -> None:
         tick_size=TICK_SIZE,
     )
 
-    pnl_markers = ["mid", "last_traded", "payout"]
+    pnl_markers = ["mid", "last_traded", "payout", "zero"]
 
     price_aggregator = PriceAggregator(exchange=exchange, products=products)
     volume_aggregator = VolumeAggregator(

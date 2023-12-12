@@ -432,7 +432,10 @@ class Agent(SimulationObject):
 
     def get_marked_pnl(self, marked_to: Union[Callable, str] = "mid") -> float:
         return sum(
-            [exchange.get_marked_pnl(self, marked_to) for exchange in self.exchanges.values()]
+            [
+                exchange.get_marked_pnl(self, marked_to)
+                for exchange in self.exchanges.values()
+            ]
         )
 
     @property
@@ -579,6 +582,9 @@ class Exchange(SimulationObject):
     def mark_to_payout(self, symbol):
         return self.__products[symbol].payout()
 
+    def mark_to_zero(self, symbol):
+        return 0
+
     def get_marked_pnl(self, agent: Agent, mark_to_f: Union[Callable, str] = "mid"):
         if mark_to_f is None:
             mark_to_f = self.mark_to_mid
@@ -587,6 +593,7 @@ class Exchange(SimulationObject):
                 "mid": self.mark_to_mid,
                 "last_traded": self.mark_to_last_traded,
                 "payout": self.mark_to_payout,
+                "zero": self.mark_to_zero,
             }[mark_to_f]
 
         pnl = self.__accounts[agent.global_id].get_holding(Account.CASH_SYM)
