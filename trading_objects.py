@@ -432,7 +432,7 @@ class Agent(SimulationObject):
 
     def get_marked_pnl(self, marked_to: Union[Callable, str] = "mid") -> float:
         return sum(
-            [exchange.get_marked_pnl(self) for exchange in self.exchanges.values()]
+            [exchange.get_marked_pnl(self, marked_to) for exchange in self.exchanges.values()]
         )
 
     @property
