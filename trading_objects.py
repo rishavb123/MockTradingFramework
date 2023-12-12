@@ -572,7 +572,9 @@ class Exchange(SimulationObject):
         return mid
 
     def mark_to_last_traded(self, symbol):
-        return self.__products[symbol].trades[-1].price
+        if len(self.__products[symbol].trades) > 0:
+            return self.__products[symbol].trades[-1].price
+        return 0
 
     def mark_to_payout(self, symbol):
         return self.__products[symbol].payout()
