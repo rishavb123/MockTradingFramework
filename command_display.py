@@ -196,7 +196,10 @@ class CommandDisplay:
         split_command = command_str.split(CommandDisplay.SPLIT_CHAR)
         command_name = split_command[0]
         if add_to_ran_commands:
-            if len(self.ran_command_strs) == 0 or self.ran_command_strs[-1] != command_str:
+            if (
+                len(self.ran_command_strs) == 0
+                or self.ran_command_strs[-1] != command_str
+            ):
                 self.ran_command_strs.append(command_str)
         if command_name in self.commands:
             result = self.commands[command_name].run(split_command[1:])
@@ -323,11 +326,7 @@ class CommandDisplay:
 
             blink = (counter * self.blinks_per_second // self.fps) % 2 == 0
 
-            prefix = (
-                "> "
-                # if blink or self.cur_edit_mode == CommandDisplay.MACRO_EDIT_MODE
-                # else "  "
-            )
+            prefix = "> "
             suffix = (
                 " "
                 if blink or self.cur_edit_mode == CommandDisplay.MACRO_EDIT_MODE
