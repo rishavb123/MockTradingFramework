@@ -62,3 +62,4 @@ class MetricsPlots:
         plt.figure(figsize=figsize)
         self.plot_f(**{k: agg.get_metric(k) for k in self.metric_names})
         plt.savefig(f"{results_dir}/{self.plot_name}.png")
+        plt.close()
