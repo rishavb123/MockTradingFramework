@@ -1,4 +1,4 @@
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
 import pygame
 
 from util import effective_inf
@@ -508,3 +508,21 @@ class ManualAgent(Agent):
                 symbols = self.exchange.symbols
                 symbol_idx = symbols.index(self.cur_symbol)
                 self.cur_symbol = symbols[(symbol_idx + 1) % len(symbols)]
+
+
+def create_manual_agent(
+    *args,
+    agent_cls: Union[type, None] = None,
+    **kwargs,
+):
+    if agent_cls is None:
+        return ManualAgent(*args, **kwargs)
+    else:
+
+        class CustomManualAgent(ManualAgent, agent_cls):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        CustomManualAgent.__name__ = f"Manual{agent_cls.__name__}"
+
+        return CustomManualAgent()

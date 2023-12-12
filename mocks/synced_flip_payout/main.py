@@ -3,7 +3,7 @@ from typing import Tuple
 
 from trading_objects import Exchange
 from market_simulation import MarketSimulation
-from agents import ManualAgent
+from agents import create_manual_agent
 from metrics_aggregators import (
     PriceAggregator,
     PricePlot,
@@ -40,11 +40,7 @@ def main() -> None:
         ]
     )
     if CONNECT_MANUAL_AGENT:
-        # class ManualArbAgent(ManualAgent, ArbAgent):
-        #     def __init__(self) -> None:
-        #         super().__init__()
-
-        manual_agent = ManualAgent()
+        manual_agent = create_manual_agent(agent_cls=None)
         agents.append(manual_agent)
 
     agent_classes = list(set([agent.__class__ for agent in agents]))
