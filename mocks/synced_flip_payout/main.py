@@ -1,4 +1,5 @@
 import time
+from typing import Tuple
 
 from trading_objects import Exchange
 from market_simulation import MarketSimulation
@@ -39,6 +40,10 @@ def main() -> None:
         ]
     )
     if CONNECT_MANUAL_AGENT:
+        # class ManualArbAgent(ManualAgent, ArbAgent):
+        #     def __init__(self) -> None:
+        #         super().__init__()
+
         manual_agent = ManualAgent()
         agents.append(manual_agent)
 
@@ -98,7 +103,7 @@ def main() -> None:
         if SAVE_RESULTS
         else None,
         save_run_info=run_info,
-        additional_dirs_required=["graphs/pnls"]
+        additional_dirs_required=["graphs/pnls"],
     )
     sim.start()
 
