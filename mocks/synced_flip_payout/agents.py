@@ -18,7 +18,7 @@ class RetailInvestor(Agent):
             )
         )
         self.sizing = np.random.randint(*RETAIL_SIZING_RANGE)
-        self.resting_order_expire_time = 100
+        self.resting_order_expiration_time = 100
         self.order_price_margin_to_ensure_lift = 3
 
     def update(self) -> None:
@@ -53,7 +53,7 @@ class RetailInvestor(Agent):
                 + self.opinion * TICK_SIZE * self.order_price_margin_to_ensure_lift,
                 size=self.sizing,
                 symbol=cheapest_investment[0],
-                frames_to_expire=self.resting_order_expire_time,
+                frames_to_expire=self.resting_order_expiration_time,
             )
 
 
@@ -89,7 +89,7 @@ class RetailTrader(Agent):
                 symbol_idx = i
 
         self.symbol = SYMBOLS[symbol_idx]
-        self.resting_order_expire_time = 100
+        self.resting_order_expiration_time = 100
         self.edge = 5
 
     def update(self) -> None:
@@ -115,7 +115,7 @@ class RetailTrader(Agent):
                             ask,
                             ask_order.size,
                             self.symbol,
-                            frames_to_expire=self.resting_order_expire_time,
+                            frames_to_expire=self.resting_order_expiration_time,
                         )
                     elif (
                         bid + TICK_SIZE < self.expected_stock_value
@@ -125,7 +125,7 @@ class RetailTrader(Agent):
                             bid + TICK_SIZE,
                             self.sizing,
                             self.symbol,
-                            frames_to_expire=self.resting_order_expire_time,
+                            frames_to_expire=self.resting_order_expiration_time,
                         )
                 else:
                     if bid > self.expected_stock_value and ask - bid < 2 * TICK_SIZE:
@@ -134,7 +134,7 @@ class RetailTrader(Agent):
                             bid,
                             bid_order.size,
                             self.symbol,
-                            frames_to_expire=self.resting_order_expire_time,
+                            frames_to_expire=self.resting_order_expiration_time,
                         )
                     elif (
                         ask - TICK_SIZE > self.expected_stock_value
@@ -145,7 +145,7 @@ class RetailTrader(Agent):
                             ask - TICK_SIZE,
                             self.sizing,
                             self.symbol,
-                            frames_to_expire=self.resting_order_expire_time,
+                            frames_to_expire=self.resting_order_expiration_time,
                         )
         else:
             if self.opinion > 0 and len(bids) == 0:
@@ -153,14 +153,14 @@ class RetailTrader(Agent):
                     1,
                     self.sizing,
                     self.symbol,
-                    frames_to_expire=self.resting_order_expire_time,
+                    frames_to_expire=self.resting_order_expiration_time,
                 )
             elif self.opinion < 0 and len(asks) == 0:
                 self.ask(
                     99,
                     self.sizing,
                     self.symbol,
-                    frames_to_expire=self.resting_order_expire_time,
+                    frames_to_expire=self.resting_order_expiration_time,
                 )
 
 
@@ -203,7 +203,7 @@ class HedgeFund(Agent):
         self.spread_to_cross = 4 * TICK_SIZE
         self.penny_by = 2 * TICK_SIZE
         self.take_all_orders_at = 20
-        self.resting_order_expire_time = 100
+        self.resting_order_expiration_time = 100
 
         self.retail_mock_sizing = np.random.randint(*RETAIL_SIZING_RANGE)
 
@@ -229,7 +229,7 @@ class HedgeFund(Agent):
                         price=event.price + self.penny_by,
                         size=2 * event.size,
                         symbol=event.symbol,
-                        frames_to_expire=self.resting_order_expire_time,
+                        frames_to_expire=self.resting_order_expiration_time,
                     )
             if (
                 event.event_type == Event.ASK
@@ -248,7 +248,7 @@ class HedgeFund(Agent):
                         price=event.price - self.penny_by,
                         size=2 * event.size,
                         symbol=event.symbol,
-                        frames_to_expire=self.resting_order_expire_time,
+                        frames_to_expire=self.resting_order_expiration_time,
                     )
             if (
                 event.event_type == Event.BID
@@ -312,7 +312,7 @@ class HedgeFund(Agent):
                 price=cheapest_investment[1],
                 size=self.retail_mock_sizing,
                 symbol=cheapest_investment[0],
-                frames_to_expire=self.resting_order_expire_time,
+                frames_to_expire=self.resting_order_expiration_time,
             )
 
 
@@ -320,6 +320,54 @@ class ArbAgent(Agent):
     def __init__(self) -> None:
         super().__init__()
         self.margin_to_ensure_trade = 1
+        self.resting_order_expiration_time = 2
+
+    def get_total_holding(self) -> int:
+        self.holdings = self.exchange.get_account_holdings(self)
+        total_holding = sum(self.holdings.values()) - self.holdings[Account.CASH_SYM]
+        return total_holding
+
+    def close_positions(self) -> None:
+        order_books = self.exchange.public_info()
+        self.holdings = self.exchange.get_account_holdings(self)
+        total_holding = self.get_total_holding()
+
+        if total_holding == 0:
+            self.cancel_all_open_orders()
+            return
+
+        best_price = None
+
+        for symbol in order_books:
+            bids = order_books[symbol].bids
+            asks = order_books[symbol].asks
+
+            if total_holding > 0:
+                if len(asks) > 0 and (
+                    best_price is None or asks[-1].price < best_price[1]
+                ):
+                    best_price = symbol, asks[-1].price, asks[-1].size
+            else:
+                if len(bids) > 0 and (
+                    best_price is None or bids[-1].price > best_price[1]
+                ):
+                    best_price = symbol, bids[-1].price, bids[-1].size
+
+        if best_price is not None:
+            if total_holding < 0:
+                self.bid(
+                    price=best_price[1] + 5 * TICK_SIZE,
+                    size=min(best_price[2], -total_holding),
+                    symbol=best_price[0],
+                    frames_to_expire=self.resting_order_expiration_time,
+                )
+            else:
+                self.ask(
+                    price=best_price[1] - 5 * TICK_SIZE,
+                    size=min(best_price[2], total_holding),
+                    symbol=best_price[0],
+                    frames_to_expire=self.resting_order_expiration_time,
+                )
 
     def update(self) -> None:
         super().update()
@@ -353,15 +401,17 @@ class ArbAgent(Agent):
                     - self.margin_to_ensure_trade * TICK_SIZE,
                     size=size,
                     symbol=highest_bid_symbol,
+                    frames_to_expire=self.resting_order_expiration_time,
                 )
                 self.bid(
                     price=markets[lowest_ask_symbol][2]
                     + self.margin_to_ensure_trade * TICK_SIZE,
                     size=size,
                     symbol=lowest_ask_symbol,
+                    frames_to_expire=self.resting_order_expiration_time,
                 )
-
-        return super().update()
+            elif self.exchange.time_remaining % 5 == 0:
+                self.close_positions()
 
 
 class MarketMaker(Agent):
