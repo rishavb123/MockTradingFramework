@@ -1,10 +1,7 @@
 from typing import Callable, Tuple
-import numpy as np
-import matplotlib.pyplot as plt
 import pygame
 
 from util import effective_inf
-from simulation import Time
 from trading_objects import Agent, Exchange, Order, Event
 from command_display import CommandDisplay, Command, Argument
 
