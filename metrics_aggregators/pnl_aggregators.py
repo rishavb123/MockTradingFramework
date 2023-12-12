@@ -24,7 +24,7 @@ class PnlAggregator(MetricsAggregator):
             if agent.__class__ not in pnls_per_class:
                 pnls_per_class[agent.__class__] = []
 
-            pnls_per_class[agent.__class__].append(agent.get_marked_pnl())
+            pnls_per_class[agent.__class__].append(agent.get_marked_pnl(marked_to=self.mark_to_f))
 
         return (
             {
