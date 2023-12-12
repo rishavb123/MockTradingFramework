@@ -99,6 +99,7 @@ def main() -> None:
         if SAVE_RESULTS
         else None,
         save_run_info=run_info,
+        # add functionality for multiple types of pnls (marked to mid, marked to last traded)
         additional_dirs_required=["graphs/pnls"],
     )
     sim.start()
