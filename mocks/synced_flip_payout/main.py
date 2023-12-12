@@ -9,7 +9,7 @@ from metrics_aggregators import (
     PricePlot,
     VolumeAggregator,
     VolumePlot,
-    MarkToMarketMidPnlAggregator,
+    PnlAggregator,
     PnlPlot,
     CombinedMetricsAggregator,
 )
@@ -49,18 +49,26 @@ def main() -> None:
         tick_size=TICK_SIZE,
     )
 
+    pnl_markers = ["mid", "last_traded", "payout"]
+
     price_aggregator = PriceAggregator(exchange=exchange, products=products)
     volume_aggregator = VolumeAggregator(
         products=products, window_size=VOLUME_WINDOW_SIZE
     )
-    pnl_aggregator = MarkToMarketMidPnlAggregator(agents)
+    pnl_aggregators = [
+        PnlAggregator(agents=agents, mark_to_f=pnl_marker) for pnl_marker in pnl_markers
+    ]
     combined_aggregator = CombinedMetricsAggregator(
-        price_aggregator, volume_aggregator, pnl_aggregator
+        price_aggregator, volume_aggregator, *pnl_aggregators
     )
     plots = (
         [PricePlot(symbol=symbol) for symbol in SYMBOLS]
         + [VolumePlot(SYMBOLS)]
-        + [PnlPlot(agent_class.__name__) for agent_class in agent_classes]
+        + [
+            PnlPlot(agent_class_name=agent_class.__name__, mark_to_f_name=pnl_marker)
+            for agent_class in agent_classes
+            for pnl_marker in pnl_markers
+        ]
     )
 
     def run_info():
@@ -99,8 +107,8 @@ def main() -> None:
         if SAVE_RESULTS
         else None,
         save_run_info=run_info,
-        # add functionality for multiple types of pnls (marked to mid, marked to last traded)
-        additional_dirs_required=["graphs/pnls"],
+        additional_dirs_required=["graphs/pnls"]
+        + [f"graphs/pnls/{pnl_marker}" for pnl_marker in pnl_markers],
     )
     sim.start()
 

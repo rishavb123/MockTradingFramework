@@ -1,4 +1,4 @@
 from metrics_aggregators.prices import PriceAggregator, PricePlot
 from metrics_aggregators.volume import VolumeAggregator, VolumePlot
-from metrics_aggregators.pnl_aggregators import MarkToMarketMidPnlAggregator, PnlPlot
+from metrics_aggregators.pnl_aggregators import PnlAggregator, PnlPlot
 from metrics_aggregators.combined import CombinedMetricsAggregator

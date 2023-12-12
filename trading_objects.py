@@ -430,9 +430,9 @@ class Agent(SimulationObject):
             if not order.voided()
         }
 
-    def get_mark_to_market_mid_pnl(self) -> float:
+    def get_marked_pnl(self, marked_to: Union[Callable, str] = "mid") -> float:
         return sum(
-            [exchange.get_mark_to_market_mid_pnl(self) for exchange in self.exchanges.values()]
+            [exchange.get_marked_pnl(self) for exchange in self.exchanges.values()]
         )
 
     @property
@@ -555,23 +555,42 @@ class Exchange(SimulationObject):
             for symbol in ([Account.CASH_SYM] + list(self.__products.keys()))
         }
 
-    def get_mark_to_market_mid_pnl(self, agent):
+    def mark_to_mid(self, symbol):
         order_book = self.public_info()
+        bids = order_book[symbol].bids
+        asks = order_book[symbol].asks
+
+        if len(bids) > 0 and len(asks) > 0:
+            mid = (bids[-1].price + asks[-1].price) / 2
+        elif len(bids) > 0:
+            mid = bids[-1].price
+        elif len(asks) > 0:
+            mid = asks[-1].price
+        else:
+            mid = 0
+
+        return mid
+
+    def mark_to_last_traded(self, symbol):
+        return self.__products[symbol].trades[-1].price
+
+    def mark_to_payout(self, symbol):
+        return self.__products[symbol].payout()
+
+    def get_marked_pnl(self, agent: Agent, mark_to_f: Union[Callable, str] = "mid"):
+        if mark_to_f is None:
+            mark_to_f = self.mark_to_mid
+        elif type(mark_to_f) == str:
+            mark_to_f = {
+                "mid": self.mark_to_mid,
+                "last_traded": self.mark_to_last_traded,
+                "payout": self.mark_to_payout,
+            }[mark_to_f]
+
         pnl = self.__accounts[agent.global_id].get_holding(Account.CASH_SYM)
         for symbol in list(self.__products.keys()):
-            bids = order_book[symbol].bids
-            asks = order_book[symbol].asks
-
-            if len(bids) > 0 and len(asks) > 0:
-                mid = (bids[-1].price + asks[-1].price) / 2
-            elif len(bids) > 0:
-                mid = bids[-1].price
-            elif len(asks) > 0:
-                mid = asks[-1].price
-            else:
-                mid = 0
-
-            pnl += self.__accounts[agent.global_id].get_holding(symbol) * mid
+            marked_to = mark_to_f(symbol=symbol)
+            pnl += self.__accounts[agent.global_id].get_holding(symbol) * marked_to
         return pnl
 
     def place_order(self, order: Order) -> None:
