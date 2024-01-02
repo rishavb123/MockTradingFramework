@@ -599,3 +599,20 @@ class MarketMaker(Agent):
         else:
             self.update_fair_value()
             self.provide_liquidity()
+
+
+class WideMaker(Agent):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.margin = 2
+        self.sizing = 100
+        self.stop_time_remaining = 150
+
+    def update(self) -> None:
+        super().update()
+        if len(self.open_orders) < 2 * len(SYMBOLS) and self.exchange.time_remaining < self.stop_time_remaining:
+            self.cancel_all_open_orders()
+            for symbol in SYMBOLS:
+                self.bid(self.margin, self.sizing, symbol)
+                self.ask(MAX_PAYOUT - self.margin, self.sizing, symbol)

@@ -21,6 +21,7 @@ from .agents import (
     HedgeFund,
     ArbAgent,
     MarketMaker,
+    WideMaker,
 )
 from .products import PairedFlipProduct
 
@@ -39,6 +40,7 @@ def main() -> None:
             HedgeFund(),
             ArbAgent(),
             MarketMaker(),
+            WideMaker(),
         ]
     )
     if CONNECT_MANUAL_AGENT:
