@@ -611,7 +611,10 @@ class WideMaker(Agent):
 
     def update(self) -> None:
         super().update()
-        if len(self.open_orders) < 2 * len(SYMBOLS) and self.exchange.time_remaining < self.stop_time_remaining:
+        if (
+            len(self.open_orders) < 2 * len(SYMBOLS)
+            and self.exchange.time_remaining < self.stop_time_remaining
+        ):
             self.cancel_all_open_orders()
             for symbol in SYMBOLS:
                 self.bid(self.margin, self.sizing, symbol)
