@@ -1,5 +1,4 @@
 import time
-from typing import Tuple
 
 from trading_objects import Exchange
 from market_simulation import MarketSimulation
@@ -26,6 +25,9 @@ from .agents import (
 from .products import PairedFlipProduct
 
 
+MANUAL_AGENT_BASE_CLS = None
+
+
 def main() -> None:
     products = [PairedFlipProduct(symbol) for symbol in SYMBOLS]
 
@@ -40,7 +42,7 @@ def main() -> None:
         ]
     )
     if CONNECT_MANUAL_AGENT:
-        manual_agent = create_manual_agent(agent_cls=None)
+        manual_agent = create_manual_agent(agent_cls=MANUAL_AGENT_BASE_CLS)
         agents.append(manual_agent)
 
     agent_classes = list(set([agent.__class__ for agent in agents]))
