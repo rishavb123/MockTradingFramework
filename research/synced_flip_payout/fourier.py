@@ -6,7 +6,7 @@ import scipy.fftpack
 
 from .config import *
 
-filename = f"research/dataset/{MOCK_NAME}/{MOCK_NAME}_{RUN_ID}/data/metrics.csv"
+filename = f"research/{MOCK_NAME}/dataset/{MOCK_NAME}_{RUN_ID}/data/metrics.csv"
 
 df = pd.read_csv(filename, index_col="time").ffill().bfill()
 
@@ -21,5 +21,5 @@ for symbol in SYMBOLS:
 fourier_df.set_index(np.fft.fftfreq(len(df.index)))
 
 k = 1
-fourier_df.iloc[k:len(fourier_df.index) // 2].plot()
+fourier_df.iloc[k : len(fourier_df.index) // 2].plot()
 plt.show()

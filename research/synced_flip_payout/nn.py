@@ -11,7 +11,7 @@ from .config import *
 
 # Data Loading and Preprocessing
 
-prefix = f"results/{MOCK_NAME}_"
+prefix = f"research/{MOCK_NAME}/dataset/{MOCK_NAME}_"
 lookahead_time = 10
 lookback_times = [1, 2, 5, 10]
 metric_names = [
@@ -63,7 +63,7 @@ normalization_params_list = [
 
 
 for run_id in run_ids:
-    filename = f"results/{MOCK_NAME}_{run_id}/data/metrics.csv"
+    filename = f"research/{MOCK_NAME}/dataset/{MOCK_NAME}_{run_id}/data/metrics.csv"
 
     df = pd.read_csv(filename, index_col="time")[columns].ffill().bfill().iloc[:-100]
 
