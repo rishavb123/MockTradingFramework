@@ -6,7 +6,7 @@ import scipy.fftpack
 
 from .config import *
 
-filename = f"results/{MOCK_NAME}_{RUN_ID}/data/metrics.csv"
+filename = f"research/dataset/{MOCK_NAME}/{MOCK_NAME}_{RUN_ID}/data/metrics.csv"
 
 df = pd.read_csv(filename, index_col="time").ffill().bfill()
 
