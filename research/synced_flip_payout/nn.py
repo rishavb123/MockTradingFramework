@@ -74,8 +74,6 @@ for run_id in run_ids:
                     ] = (
                         df[f"{symbol}_{to_normalize}"] - df[f"{symbol}_{normalize_by}"]
                     )
-                    # if np.any(df[f"{symbol}_{normalize_by}"] == 0):
-                    #     print(normalize_by)
 
     full_dataset.append(normalized_df)
 
