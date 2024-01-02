@@ -152,3 +152,9 @@ model.evaluate(X_test, y_test)
 model.save(
     f"models/{MOCK_NAME}/model_{lookahead_time}_{'o'.join([str(lookback_time) for lookback_time in lookback_times])}.keras"
 )  # load with tf.keras.models.load_model(filename)
+
+"""
+Results:
+The models ended up being pretty bad, only getting small percentage improvements throughout training.
+This indicates the market is hard to predict, which implies a well designed mock simulation and set of agents.
+"""
