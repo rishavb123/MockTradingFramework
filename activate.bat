@@ -1,2 +1,2 @@
-conda activate math_env
+@conda activate math_env
 
