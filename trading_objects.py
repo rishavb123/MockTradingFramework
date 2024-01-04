@@ -635,6 +635,7 @@ class Exchange(SimulationObject):
         if product.symbol not in self.__order_books:
             self.__order_books[product.symbol] = OrderBook(product.symbol, self)
             self.__products[product.symbol] = product
+            self.add_dependent(self.__products[product.symbol])
             self.add_dependent(self.__order_books[product.symbol])
             return True
         return False
