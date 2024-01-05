@@ -228,8 +228,13 @@ class OrderBook(SimulationObject):
         self.asks = [order for order in self.asks if not order.voided()]
 
     def __remove_resting_market_orders(self):
-        self.bids = [order for order in self.bids if order.price < effective_inf]
-        self.asks = [order for order in self.asks if order.price > 0]
+        for order in self.bids:
+            if order.price >= effective_inf:
+                order.cancel()
+        for order in self.asks:
+            if order.price <= 0:
+                order.cancel()
+        self.__clean_orders()
 
     def place_order(self, order: Order) -> None:
         self._orders_to_place.append(order)
@@ -499,7 +504,7 @@ class Product(SimulationObject):
         if len(self.trades) > 0:
             return self.trades[-1].price
         return 0
-    
+
     def dividend(self) -> float:
         return 0
 
@@ -668,7 +673,6 @@ class Exchange(SimulationObject):
                 self.__accounts[agent_id].update_holding(
                     Account.CASH_SYM, product_holding * dividend
                 )
-
 
     @SimulationObject.cache_wrapper
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:
