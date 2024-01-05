@@ -5,5 +5,5 @@ class PairedFlipProduct(Product):
     def __init__(self, symbol: str) -> None:
         super().__init__(symbol)
 
-    def payout(self) -> None:
+    def payout(self) -> float:
         return PAYOUT
