@@ -2,13 +2,14 @@ from typing import Dict
 import numpy as np
 
 from trading_objects import Product, Time
+from .config import MU, SIGMA
 
 
 class CompanyStock(Product):
     def __init__(self, symbol: str, **kwargs: Dict[str, float]) -> None:
         super().__init__(symbol)
-        self.mu = kwargs.get("mu", (np.random.random() * 2 - 1) / 25)
-        self.sigma = kwargs.get("sigma", (np.random.random() * 2 - 1) / 3)
+        self.mu = kwargs.get("mu", MU)
+        self.sigma = kwargs.get("sigma", SIGMA)
         self.current_value = kwargs.get("value", 50)
         self.bankruptcy_value_thresh = kwargs.get(
             "bankruptcy_value_thresh", self.current_value * np.random.random() * 0.1
@@ -27,3 +28,4 @@ class CompanyStock(Product):
 
     def payout(self) -> None:
         return int(self.current_value)
+    

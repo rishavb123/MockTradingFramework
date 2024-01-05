@@ -499,6 +499,9 @@ class Product(SimulationObject):
         if len(self.trades) > 0:
             return self.trades[-1].price
         return 0
+    
+    def dividend(self) -> None:
+        return 0
 
 
 class Event:
@@ -653,6 +656,19 @@ class Exchange(SimulationObject):
 
     def unsubscribe(self, agent: Agent) -> None:
         del self.__subscribed_callbacks[agent.global_id]
+
+    def update(self) -> None:
+        super().update()
+        for symbol in self.__products:
+            product = self.__products[symbol]
+            dividend = product.dividend()
+            for agent_id in self.__accounts:
+                product_holding = self.__accounts[agent_id].get_holding(symbol)
+                self.__accounts[agent_id].set_holding(symbol, 0)
+                self.__accounts[agent_id].update_holding(
+                    Account.CASH_SYM, product_holding * dividend
+                )
+
 
     @SimulationObject.cache_wrapper
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:
