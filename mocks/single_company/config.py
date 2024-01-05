@@ -7,7 +7,7 @@ DT = 0.1
 VOLUME_WINDOW_SIZE = 50
 
 MU = (np.random.random() * 2 - 1) / 25
-SIGMA = (np.random.random() / 3 + 0.1) * (-1 if np.random.random() < 0.5 else 1)
+SIGMA = (np.random.random() / 2 + 0.05) * (-1 if np.random.random() < 0.5 else 1)
 
 NUM_BIASED_AGENTS = 10
 

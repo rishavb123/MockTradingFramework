@@ -22,7 +22,7 @@ MANUAL_AGENT_BASE_CLS = None
 
 
 def main() -> None:
-    products = [CompanyStock(symbol, mu=MU, sigma=SIGMA) for symbol in SYMBOLS]
+    products = [CompanyStock(symbol) for symbol in SYMBOLS]
 
     agents = [RandomBiasedAgent(products[0]) for _ in range(NUM_BIASED_AGENTS)]
     if CONNECT_MANUAL_AGENT:
