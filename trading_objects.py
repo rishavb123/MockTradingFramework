@@ -495,12 +495,12 @@ class Product(SimulationObject):
             Trade(self.symbol, price, size, buyer.global_id, seller.global_id)
         )
 
-    def payout(self) -> None:
+    def payout(self) -> float:
         if len(self.trades) > 0:
             return self.trades[-1].price
         return 0
     
-    def dividend(self) -> None:
+    def dividend(self) -> float:
         return 0
 
 
