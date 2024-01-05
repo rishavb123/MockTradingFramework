@@ -14,7 +14,11 @@ from metrics_aggregators import (
 )
 
 from .config import *
-from .agents import BiasedStockAgent, OptimisticBiasedBondAgent
+from .agents import (
+    BiasedStockAgent,
+    OptimisticBiasedBondAgent,
+    RealisticBiasedBondAgent,
+)
 from .products import CompanyStock, CorporateBond
 
 
@@ -28,9 +32,11 @@ def main() -> None:
 
     SYMBOLS = [p.symbol for p in products]
 
-    agents = [BiasedStockAgent(stock) for _ in range(NUM_STOCK_AGENTS)] + [
-        OptimisticBiasedBondAgent(bond) for _ in range(NUM_BOND_AGENTS)
-    ]
+    agents = (
+        [BiasedStockAgent(stock) for _ in range(NUM_STOCK_AGENTS)]
+        + [OptimisticBiasedBondAgent(bond) for _ in range(NUM_OPT_BOND_AGENTS)]
+        + [RealisticBiasedBondAgent(bond) for _ in range(NUM_OPT_BOND_AGENTS)]
+    )
     if CONNECT_MANUAL_AGENT:
         manual_agent = create_manual_agent(agent_cls=MANUAL_AGENT_BASE_CLS)
         agents.append(manual_agent)
@@ -81,7 +87,8 @@ def main() -> None:
         info["PAR_VALUE"] = PAR_VALUE
         info["MATURITY"] = MATURITY
         info["NUM_STOCK_AGENTS"] = NUM_STOCK_AGENTS
-        info["NUM_BOND_AGENTS"] = NUM_BOND_AGENTS
+        info["NUM_OPT_BOND_AGENTS"] = NUM_OPT_BOND_AGENTS
+        info["NUM_REAL_BOND_AGENTS"] = NUM_REAL_BOND_AGENTS
         info["MOCK_NAME"] = MOCK_NAME
 
         return info

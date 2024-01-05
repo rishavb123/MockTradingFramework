@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import lognorm
 
 from trading_objects import Agent, Time
 
@@ -21,14 +22,17 @@ class BiasedStockAgent(Agent):
         if self.product.bankrupt:
             self.cancel_all_open_orders()
         elif Time.now % self.product.update_freq == self.place_orders_at:
+            extra_noise = np.random.random() * 6 - 3
             self.bid(
-                price=max(0, self.product.current_value - self.edge + self.bias),
+                price=max(
+                    0, self.product.current_value - self.edge + self.bias + extra_noise
+                ),
                 size=self.sizing,
                 symbol=self.product.symbol,
                 frames_to_expire=self.product.update_freq,
             )
             self.ask(
-                price=self.product.current_value + self.edge + self.bias,
+                price=self.product.current_value + self.edge + self.bias + extra_noise,
                 size=self.sizing,
                 symbol=self.product.symbol,
                 frames_to_expire=self.product.update_freq,
@@ -68,15 +72,39 @@ class OptimisticBiasedBondAgent(Agent):
             self.cancel_all_open_orders()
         elif Time.now % self.order_freq == self.place_orders_at:
             fair = self.estimate_fair_value_assuming_no_default()
+            extra_noise = np.random.random() * 6 - 3
             self.bid(
-                max(0, fair - self.edge + self.bias),
+                max(0, fair - self.edge + self.bias + extra_noise),
                 size=self.sizing,
                 symbol=self.bond.symbol,
                 frames_to_expire=self.order_freq,
             )
             self.ask(
-                max(0, fair + self.edge + self.bias),
+                max(0, fair + self.edge + self.bias + extra_noise),
                 size=self.sizing,
                 symbol=self.bond.symbol,
                 frames_to_expire=self.order_freq,
             )
+
+
+class RealisticBiasedBondAgent(OptimisticBiasedBondAgent):
+    def __init__(self, bond: CorporateBond) -> None:
+        super().__init__(bond)
+
+    def estimate_chance_of_default(self) -> float:
+        if self.bond.maturity == -1:
+            time_remaining = ITER - Time.now
+        else:
+            time_remaining = self.bond.maturity - Time.now
+
+        return lognorm.cdf(
+            self.bond.company_stock.bankruptcy_value_thresh,
+            self.bond.company_stock.current_value,
+            loc=self.bond.company_stock.mu,
+            scale=self.bond.company_stock.sigma * np.sqrt(time_remaining),
+        ) # TODO: fix this its broken and always returning 1
+
+    def estimate_fair_value_assuming_no_default(self) -> float:
+        return (
+            1 - self.estimate_chance_of_default()
+        ) * super().estimate_fair_value_assuming_no_default()
