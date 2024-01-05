@@ -678,7 +678,7 @@ class Exchange(SimulationObject):
                 )
                 if expired:
                     self.__accounts[agent_id].set_holding(symbol, 0)
-                    self.__accounts[agent_id].update_holding(Account.CASH_SYM, product.payout())
+                    self.__accounts[agent_id].update_holding(Account.CASH_SYM, product_holding * product.payout())
 
     @SimulationObject.cache_wrapper
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:
