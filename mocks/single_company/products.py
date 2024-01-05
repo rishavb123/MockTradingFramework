@@ -41,27 +41,21 @@ class CorporateBond(Product):
         self.matured = False
 
     def dividend(self) -> float:
-        if Time.now == self.maturity:
-            self.matured = True
-            return self.return_par_value(), True
-        elif (
+        if (
             not self.matured
             and self.coupon_freq > 0
             and Time.now % self.coupon_freq == 0
             and self.company_stock.current_value > 0
         ):
-            return self.coupon_payout, False
-        return 0, False
+            return self.coupon_payout
+        return 0
 
-    def return_par_value(self) -> float:
+    def payout(self) -> float:
         if self.company_stock.current_value > 0 and self.coupon_freq == 0:
             return self.par_value + self.coupon_payout
         elif self.company_stock.current_value > 0:
             return self.par_value
         return 0
-    
-    def payout(self) -> float:
-        if self.matured:
-            return 0
-        return self.return_par_value()
 
+    def is_expired(self) -> bool:
+        return self.maturity > -1 and Time.now >= self.maturity
