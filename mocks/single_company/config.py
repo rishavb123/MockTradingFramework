@@ -1,6 +1,6 @@
 import numpy as np
 
-SYMBOLS = ["A"]
+COMPANY_SYMBOL = "A"
 TICK_SIZE = 1
 ITER = 1200
 DT = 0.1
@@ -8,11 +8,20 @@ VOLUME_WINDOW_SIZE = 50
 
 MU = (np.random.random() * 2 - 1) / 25
 SIGMA = (np.random.random() / 2 + 0.05) * (-1 if np.random.random() < 0.5 else 1)
+STARTING_VALUE = 50
+BANKRUPTCY_VALUE_THRESH = STARTING_VALUE * np.random.random() * 0.1
+UPDATE_FREQ = 10
 
-NUM_BIASED_AGENTS = 10
+COUPON_PAYOUT = 10
+COUPON_FREQ = 100
+PAR_VALUE = 1000
+MATURITY = -1
+
+NUM_STOCK_AGENTS = 10
+NUM_BOND_AGENTS = 20
 
 MOCK_NAME = "single_company"
-SAVE_RESULTS = True
+SAVE_RESULTS = False
 
 CONNECT_MANUAL_AGENT = True
 DISPLAY_TO_CONSOLE = not CONNECT_MANUAL_AGENT

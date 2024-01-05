@@ -14,17 +14,23 @@ from metrics_aggregators import (
 )
 
 from .config import *
-from .agents import RandomBiasedAgent
-from .products import CompanyStock
+from .agents import BiasedStockAgent, OptimisticBiasedBondAgent
+from .products import CompanyStock, CorporateBond
 
 
 MANUAL_AGENT_BASE_CLS = None
 
 
 def main() -> None:
-    products = [CompanyStock(symbol) for symbol in SYMBOLS]
+    stock = CompanyStock(COMPANY_SYMBOL)
+    bond = CorporateBond(stock)
+    products = [stock, bond]
 
-    agents = [RandomBiasedAgent(products[0]) for _ in range(NUM_BIASED_AGENTS)]
+    SYMBOLS = [p.symbol for p in products]
+
+    agents = [BiasedStockAgent(stock) for _ in range(NUM_STOCK_AGENTS)] + [
+        OptimisticBiasedBondAgent(bond) for _ in range(NUM_BOND_AGENTS)
+    ]
     if CONNECT_MANUAL_AGENT:
         manual_agent = create_manual_agent(agent_cls=MANUAL_AGENT_BASE_CLS)
         agents.append(manual_agent)
@@ -64,10 +70,18 @@ def main() -> None:
         info["TICK_SIZE"] = TICK_SIZE
         info["ITER"] = ITER
         info["DT"] = DT if CONNECT_MANUAL_AGENT else 0
+        info["VOLUME_WINDOW_SIZE"] = VOLUME_WINDOW_SIZE
         info["MU"] = MU
         info["SIGMA"] = SIGMA
-        info["VOLUME_WINDOW_SIZE"] = VOLUME_WINDOW_SIZE
-        info["NUM_BIASED_AGENTS"] = NUM_BIASED_AGENTS
+        info["STARTING_VALUE"] = STARTING_VALUE
+        info["BANKRUPTCY_VALUE_THRESH"] = BANKRUPTCY_VALUE_THRESH
+        info["UPDATE_FREQ"] = UPDATE_FREQ
+        info["COUPON_PAYOUT"] = COUPON_PAYOUT
+        info["COUPON_FREQ"] = COUPON_FREQ
+        info["PAR_VALUE"] = PAR_VALUE
+        info["MATURITY"] = MATURITY
+        info["NUM_STOCK_AGENTS"] = NUM_STOCK_AGENTS
+        info["NUM_BOND_AGENTS"] = NUM_BOND_AGENTS
         info["MOCK_NAME"] = MOCK_NAME
 
         return info
