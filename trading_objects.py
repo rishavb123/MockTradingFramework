@@ -505,8 +505,8 @@ class Product(SimulationObject):
             return self.trades[-1].price
         return 0
 
-    def dividend(self) -> float:
-        return 0
+    def dividend(self) -> Tuple[float, bool]:
+        return 0, False
 
 
 class Event:
@@ -666,10 +666,11 @@ class Exchange(SimulationObject):
         super().update()
         for symbol in self.__products:
             product = self.__products[symbol]
-            dividend = product.dividend()
+            dividend, expired = product.dividend()
             for agent_id in self.__accounts:
                 product_holding = self.__accounts[agent_id].get_holding(symbol)
-                self.__accounts[agent_id].set_holding(symbol, 0)
+                if expired:
+                    self.__accounts[agent_id].set_holding(symbol, 0)
                 self.__accounts[agent_id].update_holding(
                     Account.CASH_SYM, product_holding * dividend
                 )
