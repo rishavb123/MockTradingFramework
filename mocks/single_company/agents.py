@@ -49,7 +49,7 @@ class OptimisticBiasedBondAgent(Agent):
         self.order_freq = 50
         self.place_orders_at = np.random.randint(self.order_freq)
 
-    def estimate_fair_value_assuming_no_default(self) -> float:
+    def estimate_fair_value(self) -> float:
         if self.bond.coupon_freq == 0:
             return self.bond.coupon_payout + self.bond.par_value
         else:
@@ -71,7 +71,7 @@ class OptimisticBiasedBondAgent(Agent):
         if self.bond.company_stock.bankrupt or self.bond.matured:
             self.cancel_all_open_orders()
         elif Time.now % self.order_freq == self.place_orders_at:
-            fair = self.estimate_fair_value_assuming_no_default()
+            fair = self.estimate_fair_value()
             extra_noise = np.random.random() * 6 - 3
             self.bid(
                 max(0, fair - self.edge + self.bias + extra_noise),
@@ -97,14 +97,14 @@ class RealisticBiasedBondAgent(OptimisticBiasedBondAgent):
         else:
             time_remaining = self.bond.maturity - Time.now
 
+        mean = self.bond.company_stock.current_value + self.bond.company_stock.mu * time_remaining
+        std = self.bond.company_stock.sigma * np.sqrt(time_remaining)
+
         return lognorm.cdf(
             self.bond.company_stock.bankruptcy_value_thresh,
-            self.bond.company_stock.current_value,
-            loc=self.bond.company_stock.mu,
-            scale=self.bond.company_stock.sigma * np.sqrt(time_remaining),
-        ) # TODO: fix this its broken and always returning 1
+            s=std,
+            scale=np.exp(mean),
+        )
 
-    def estimate_fair_value_assuming_no_default(self) -> float:
-        return (
-            1 - self.estimate_chance_of_default()
-        ) * super().estimate_fair_value_assuming_no_default()
+    def estimate_fair_value(self) -> float:
+        return (1 - self.estimate_chance_of_default()) * super().estimate_fair_value()
