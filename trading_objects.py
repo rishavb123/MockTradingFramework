@@ -516,9 +516,9 @@ class Product(SimulationObject):
         self.exchanges.append(exchange)
 
     @property
-    def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:
+    def exchange(self) -> Union[Exchange, List[Exchange]]:
         if len(self.exchanges) == 1:
-            return list(self.exchanges.values())[0]
+            return list(self.exchanges)[0]
         return self.exchanges
 
 
@@ -690,16 +690,20 @@ class Exchange(SimulationObject):
             product = self.__products[symbol]
             dividend = product.dividend()
             expired = product.is_expired()
+            payout = None
+            if expired:
+                payout = product.payout()
             for agent_id in self.__accounts:
                 product_holding = self.__accounts[agent_id].get_holding(symbol)
-                self.__accounts[agent_id].update_holding(
-                    Account.CASH_SYM, product_holding * dividend
-                )
-                if expired:
-                    self.__accounts[agent_id].set_holding(symbol, 0)
+                if product_holding != 0:
                     self.__accounts[agent_id].update_holding(
-                        Account.CASH_SYM, product_holding * product.payout()
+                        Account.CASH_SYM, product_holding * dividend
                     )
+                    if expired:
+                        self.__accounts[agent_id].set_holding(symbol, 0)
+                        self.__accounts[agent_id].update_holding(
+                            Account.CASH_SYM, product_holding * payout
+                        )
 
     @SimulationObject.cache_wrapper
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:

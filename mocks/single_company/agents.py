@@ -97,7 +97,10 @@ class RealisticBiasedBondAgent(OptimisticBiasedBondAgent):
         else:
             time_remaining = self.bond.maturity - Time.now
 
-        mean = self.bond.company_stock.current_value + self.bond.company_stock.mu * time_remaining
+        mean = (
+            self.bond.company_stock.current_value
+            + self.bond.company_stock.mu * time_remaining
+        )
         std = self.bond.company_stock.sigma * np.sqrt(time_remaining)
 
         return lognorm.cdf(
@@ -106,5 +109,17 @@ class RealisticBiasedBondAgent(OptimisticBiasedBondAgent):
             scale=np.exp(mean),
         )
 
+    def fair_value_if_default(self) -> float:
+        price_drop = (
+            self.bond.company_stock.current_value
+            - self.bond.company_stock.bankruptcy_value_thresh
+        ) / self.bond.company_stock.sigma
+        return (self.bond.coupon_payout / self.bond.coupon_freq) * int(
+            price_drop
+        ) * 2 + self.bond.par_value / 5
+
     def estimate_fair_value(self) -> float:
-        return (1 - self.estimate_chance_of_default()) * super().estimate_fair_value()
+        p = self.estimate_chance_of_default()
+        return (
+            1 - p
+        ) * super().estimate_fair_value() + p * self.fair_value_if_default()
