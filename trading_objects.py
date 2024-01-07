@@ -491,6 +491,7 @@ class Product(SimulationObject):
         self.num_trades = 0
         self.volume = 0
         self.trades = []
+        self.exchanges = []
 
     def record_trade(
         self, price: float, size: int, buyer: Agent, seller: Agent
@@ -507,9 +508,18 @@ class Product(SimulationObject):
 
     def dividend(self) -> float:
         return 0
-    
+
     def is_expired(self) -> bool:
         return False
+
+    def register_exchange(self, exchange: Exchange):
+        self.exchanges.append(exchange)
+
+    @property
+    def exchange(self) -> Union[Exchange, Dict[str, Exchange]]:
+        if len(self.exchanges) == 1:
+            return list(self.exchanges.values())[0]
+        return self.exchanges
 
 
 class Event:
@@ -563,13 +573,21 @@ class Exchange(SimulationObject):
         for callback in self.__subscribed_callbacks.values():
             callback(event)
 
-    def get_account_holdings(self, agent):
+    def get_account_holdings(self, agent) -> Dict[str, int]:
         return {
             symbol: self.__accounts[agent.global_id].get_holding(symbol)
             for symbol in ([Account.CASH_SYM] + list(self.__products.keys()))
         }
+    
+    def get_total_product_count(self, symbol: str) -> int:
+        count = 0
+        for agent_id in self.__accounts:
+            holding = self.__accounts[agent_id].get_holding(symbol)
+            if holding > 0:
+                count += holding
+        return count
 
-    def mark_to_mid(self, symbol):
+    def mark_to_mid(self, symbol: str) -> float:
         order_book = self.public_info()
         bids = order_book[symbol].bids
         asks = order_book[symbol].asks
@@ -585,18 +603,18 @@ class Exchange(SimulationObject):
 
         return mid
 
-    def mark_to_last_traded(self, symbol):
+    def mark_to_last_traded(self, symbol: str) -> float:
         if len(self.__products[symbol].trades) > 0:
             return self.__products[symbol].trades[-1].price
         return 0
 
-    def mark_to_payout(self, symbol):
+    def mark_to_payout(self, symbol: str) -> float:
         return self.__products[symbol].payout()
 
-    def mark_to_zero(self, symbol):
+    def mark_to_zero(self, symbol: str) -> float:
         return 0
 
-    def get_marked_pnl(self, agent: Agent, mark_to_f: Union[Callable, str] = "mid"):
+    def get_marked_pnl(self, agent: Agent, mark_to_f: Union[Callable, str] = "mid") -> float:
         if mark_to_f is None:
             mark_to_f = self.mark_to_mid
         elif type(mark_to_f) == str:
@@ -648,6 +666,7 @@ class Exchange(SimulationObject):
             self.__products[product.symbol] = product
             self.add_dependent(self.__products[product.symbol])
             self.add_dependent(self.__order_books[product.symbol])
+            product.register_exchange(self)
             return True
         return False
 
@@ -678,7 +697,9 @@ class Exchange(SimulationObject):
                 )
                 if expired:
                     self.__accounts[agent_id].set_holding(symbol, 0)
-                    self.__accounts[agent_id].update_holding(Account.CASH_SYM, product_holding * product.payout())
+                    self.__accounts[agent_id].update_holding(
+                        Account.CASH_SYM, product_holding * product.payout()
+                    )
 
     @SimulationObject.cache_wrapper
     def public_info(self) -> Dict[str, OrderBook.PublicInfo]:

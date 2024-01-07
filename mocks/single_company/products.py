@@ -22,12 +22,15 @@ class CompanyStock(Product):
         if not self.bankrupt and Time.now % self.update_freq == 0:
             W = 1 if np.random.random() > 0.5 else -1
             self.current_value += self.current_value * (self.mu + self.sigma * W)
-            if self.current_value < self.bankruptcy_value_thresh:
-                self.current_value = 0
+            if self.current_value <= self.bankruptcy_value_thresh:
+                self.current_value = self.bankruptcy_value_thresh
                 self.bankrupt = True
 
     def payout(self) -> float:
-        return int(self.current_value)
+        if self.bankrupt:
+            return 0
+        else:
+            return int(self.current_value)
 
 
 class CorporateBond(Product):
@@ -45,17 +48,22 @@ class CorporateBond(Product):
             not self.matured
             and self.coupon_freq > 0
             and Time.now % self.coupon_freq == 0
-            and self.company_stock.current_value > 0
+            and not self.company_stock.bankrupt
         ):
             return self.coupon_payout
         return 0
 
     def payout(self) -> float:
-        if self.company_stock.current_value > 0 and self.coupon_freq == 0:
+        if not self.company_stock.bankrupt and self.coupon_freq == 0:
             return self.par_value + self.coupon_payout
-        elif self.company_stock.current_value > 0:
+        elif not self.company_stock.bankrupt:
             return self.par_value
-        return 0
+        else:
+            return (
+                self.company_stock.current_value
+                * self.exchange.get_total_product_count(self.company_stock.symbol)
+                / self.exchange.get_total_product_count(self.symbol)
+            )
 
     def is_expired(self) -> bool:
         return self.maturity > -1 and Time.now >= self.maturity
