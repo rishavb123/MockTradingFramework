@@ -82,9 +82,9 @@ class CorporateBond(Product):
                 bond_count = self.exchange.get_total_product_count(self.symbol)
                 if bond_count > 0:
                     payout = min(
-                        self.company_stock.current_value
+                        np.round(self.company_stock.current_value
                         * self.exchange.get_total_product_count(self.company_stock.symbol)
-                        / bond_count,
+                        / bond_count, 2),
                         self.par_value,
                     )
                 else:
