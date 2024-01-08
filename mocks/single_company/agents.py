@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import lognorm
 
+from simulation import SimulationObject
 from trading_objects import Agent, Time
 
 from .config import ITER
@@ -49,6 +50,7 @@ class OptimisticBiasedBondAgent(Agent):
         self.order_freq = 50
         self.place_orders_at = np.random.randint(self.order_freq)
 
+    @SimulationObject.cache_wrapper
     def estimate_fair_value(self) -> float:
         if self.bond.coupon_freq == 0:
             return self.bond.coupon_payout + self.bond.par_value
@@ -91,6 +93,7 @@ class RealisticBiasedBondAgent(OptimisticBiasedBondAgent):
     def __init__(self, bond: CorporateBond) -> None:
         super().__init__(bond)
 
+    @SimulationObject.cache_wrapper
     def estimate_chance_of_default(self) -> float:
         if self.bond.maturity == -1:
             time_remaining = ITER - Time.now
@@ -109,6 +112,7 @@ class RealisticBiasedBondAgent(OptimisticBiasedBondAgent):
             scale=np.exp(mean),
         )
 
+    @SimulationObject.cache_wrapper
     def fair_value_if_default(self) -> float:
         price_drop = (
             self.bond.company_stock.current_value
