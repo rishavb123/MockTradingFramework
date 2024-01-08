@@ -12,7 +12,7 @@ class CompanyStock(Product):
         super().__init__(symbol)
         self.mu = kwargs.get("mu", MU)
         self.sigma = kwargs.get("sigma", SIGMA)
-        self.current_value = kwargs.get("value", STARTING_VALUE)
+        self.current_value = kwargs.get("starting_value", STARTING_VALUE)
         self.bankruptcy_value_thresh = kwargs.get(
             "bankruptcy_value_thresh", BANKRUPTCY_VALUE_THRESH
         )
