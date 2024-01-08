@@ -134,12 +134,12 @@ class LongStockShortBond(Agent):
         super().__init__()
 
         self.stock_price_thresh = 80
-        self.bond_price_thresh = 100
+        self.bond_price_thresh = 50
 
         self.stock_symbol = COMPANY_SYMBOL
         self.bond_symbol = BOND_SYMBOL
 
-        self.stock_sizing = 20
+        self.stock_sizing = 10
         self.bond_sizing = 5
 
         self.frames_to_expire = 20
@@ -179,7 +179,10 @@ class LongStockShortBond(Agent):
             asks = order_books[self.stock_symbol].asks
 
             if len(asks) > 0:
-                if asks[-1].price <= self.stock_price_thresh and not have_open_stock_order:
+                if (
+                    asks[-1].price <= self.stock_price_thresh
+                    and not have_open_stock_order
+                ):
                     self.bid(
                         price=self.stock_price_thresh,
                         size=self.stock_sizing,

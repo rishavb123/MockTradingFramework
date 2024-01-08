@@ -7,7 +7,7 @@ ITER = 1200
 DT = 0.1
 VOLUME_WINDOW_SIZE = 50
 
-MU = (np.random.random() * 2 - 1) / 25
+MU = (np.random.random() * 2 - 1) / 20
 SIGMA = np.random.random() / 2 + 0.05
 STARTING_VALUE = 100
 BANKRUPTCY_VALUE_THRESH = STARTING_VALUE * np.random.random() * 0.1
