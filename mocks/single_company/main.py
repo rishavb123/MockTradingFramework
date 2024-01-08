@@ -18,6 +18,7 @@ from .agents import (
     BiasedStockAgent,
     OptimisticBiasedBondAgent,
     RealisticBiasedBondAgent,
+    LongStockShortBond,
 )
 from .products import CompanyStock, CorporateBond
 
@@ -33,9 +34,10 @@ def main() -> None:
     SYMBOLS = [p.symbol for p in products]
 
     agents = (
-        [BiasedStockAgent(stock) for _ in range(NUM_STOCK_AGENTS)]
-        + [OptimisticBiasedBondAgent(bond) for _ in range(NUM_OPT_BOND_AGENTS)]
-        + [RealisticBiasedBondAgent(bond) for _ in range(NUM_REAL_BOND_AGENTS)]
+        [BiasedStockAgent() for _ in range(NUM_STOCK_AGENTS)]
+        + [OptimisticBiasedBondAgent() for _ in range(NUM_OPT_BOND_AGENTS)]
+        + [RealisticBiasedBondAgent() for _ in range(NUM_REAL_BOND_AGENTS)]
+        + [LongStockShortBond()]
     )
     if CONNECT_MANUAL_AGENT:
         manual_agent = create_manual_agent(agent_cls=MANUAL_AGENT_BASE_CLS)
