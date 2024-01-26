@@ -1,1 +1,2 @@
 - plot csv files: https://chart-studio.plotly.com/
+- try brownian motion modelling
